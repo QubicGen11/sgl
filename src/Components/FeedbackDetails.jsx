@@ -10,7 +10,7 @@ const FeedbackDetails = () => {
   useEffect(() => {
     // Fetch all emails from the feedbacks
     const fetchEmails = async () => {
-       const response = await fetch('http://localhost:3000/api/feedback');
+       const response = await fetch('https://sgl-backend-xi.vercel.app/api/feedback');
       // const response = await fetch('https://sgl-backend-one.vercel.app/api/feedback');
       const data = await response.json();
       const uniqueEmails = [...new Set(data.map(feedback => feedback.email))];
@@ -24,7 +24,7 @@ const FeedbackDetails = () => {
     setSelectedEmail(e.target.value);
 
     // Fetch feedback details for the selected email
-     const response = await fetch(`http://localhost:3000/api/feedback?email=${e.target.value}`);
+     const response = await fetch(`https://sgl-backend-xi.vercel.app/api/feedback?email=${e.target.value}`);
     // const response = await fetch(`https://sgl-backend-one.vercel.app/api/feedback?email=${e.target.value}`);
     const data = await response.json();
     setFeedback(data);

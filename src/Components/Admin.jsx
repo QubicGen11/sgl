@@ -27,7 +27,7 @@ const Admin = () => {
 
   const handleUpdate = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/feedback/${id}`, {
+      const response = await fetch(`https://sgl-backend-xi.vercel.app/api/feedback/${id}`, {
       // const response = await fetch(`https://sgl-backend-one.vercel.app/api/feedback/${id}`, {
         method: 'PUT',
         headers: {
@@ -69,7 +69,7 @@ const Admin = () => {
 
   const handleDelete = async (id) => {
     try {
-       const response = await fetch(`http://localhost:3000/api/feedback/${id}`, {
+       const response = await fetch(`https://sgl-backend-xi.vercel.app/api/feedback/${id}`, {
       // const response = await fetch(`https://sgl-backend-one.vercel.app/api/feedback/${id}`, {
         method: 'DELETE',
       });
