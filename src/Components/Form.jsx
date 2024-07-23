@@ -2,8 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import { gsap } from 'gsap';
 import Swal from 'sweetalert2';
+import getConfig from './config';
+
 
 const Form = () => {
+  const { apiUrl } = getConfig();
+
   const initialFormData = {
     email: '',
     organizationName: '',
@@ -22,8 +26,6 @@ const Form = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const formRef = useRef(null);
-
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,19 +63,42 @@ const Form = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Store form data in local storage
-    localStorage.setItem('formData', JSON.stringify(formData));
-    Swal.fire({
-      title: 'Success!',
-      text: 'Form data saved!',
-      icon: 'success',
-      confirmButtonText: 'OK'
-    }).then(() => {
-      // Clear form data after submission
-      setFormData(initialFormData);
-    });
+    try {
+      const response = await fetch(`${apiUrl}/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        Swal.fire({
+          title: 'Success!',
+          text: 'Form data saved!',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        }).then(() => {
+          setFormData(initialFormData);
+        });
+      } else {
+        Swal.fire({
+          title: 'Error!',
+          text: 'Failed to save form data',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        title: 'Error!',
+        text: 'An error occurred',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    }
   };
 
   const individualsList = [
