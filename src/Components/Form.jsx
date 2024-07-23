@@ -68,8 +68,10 @@ const Form = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': 'https://sgl.vercel.app',
         },
         body: JSON.stringify(formData),
+        credentials: 'include', // Ensure credentials are included if needed
       });
   
       if (response.ok) {
