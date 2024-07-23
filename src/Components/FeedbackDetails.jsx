@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaMoon, FaSun } from 'react-icons/fa';
-import getConfig from './config';
-
 
 const FeedbackDetails = () => {
-  const { apiUrl } = getConfig();
-
   const [emails, setEmails] = useState([]);
   const [selectedEmail, setSelectedEmail] = useState('');
   const [feedback, setFeedback] = useState(null);
@@ -14,23 +10,26 @@ const FeedbackDetails = () => {
   useEffect(() => {
     // Fetch all emails from the feedbacks
     const fetchEmails = async () => {
-      const response = await fetch(`${apiUrl}/feedback`);
+       const response = await fetch('http://localhost:3000/api/feedback');
+      // const response = await fetch('https://sgl-backend-one.vercel.app/api/feedback');
       const data = await response.json();
       const uniqueEmails = [...new Set(data.map(feedback => feedback.email))];
       setEmails(uniqueEmails);
     };
 
     fetchEmails();
-  }, [apiUrl]);
+  }, []);
 
   const handleEmailChange = async (e) => {
     setSelectedEmail(e.target.value);
 
     // Fetch feedback details for the selected email
-    const response = await fetch(`${apiUrl}/feedback?email=${e.target.value}`);
+     const response = await fetch(`http://localhost:3000/api/feedback?email=${e.target.value}`);
+    // const response = await fetch(`https://sgl-backend-one.vercel.app/api/feedback?email=${e.target.value}`);
     const data = await response.json();
     setFeedback(data);
   };
+
   return (
     <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} min-h-screen p-8`}>
       <header className="flex justify-between items-center mb-8">

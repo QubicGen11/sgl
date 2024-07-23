@@ -2,12 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import { gsap } from 'gsap';
 import Swal from 'sweetalert2';
-import getConfig from './config';
-
 
 const Form = () => {
-  const { apiUrl } = getConfig();
-
   const initialFormData = {
     email: '',
     organizationName: '',
@@ -26,6 +22,8 @@ const Form = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const formRef = useRef(null);
+
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -66,14 +64,14 @@ const Form = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${apiUrl}/feedback`, {
+      const response = await fetch('http://localhost:3000/api/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
       });
-
+  
       if (response.ok) {
         Swal.fire({
           title: 'Success!',

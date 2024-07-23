@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import Swal from 'sweetalert2';
-import getConfig from './config';
-
 
 const Admin = () => {
-  const { apiUrl } = getConfig();
-
   const [feedbacks, setFeedbacks] = useState([]);
   const [editingFeedback, setEditingFeedback] = useState(null);
   const [updatedFeedback, setUpdatedFeedback] = useState({});
@@ -15,13 +11,14 @@ const Admin = () => {
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
-      const response = await fetch(`${apiUrl}/feedback`);
+      const response = await fetch('http://localhost:3000/api/feedback');
+      // const response = await fetch('https://sgl-backend-one.vercel.app/api/feedback');
       const data = await response.json();
       setFeedbacks(data);
     };
 
     fetchFeedbacks();
-  }, [apiUrl]);
+  }, []);
 
   const handleEdit = (feedback) => {
     setEditingFeedback(feedback);
@@ -30,7 +27,8 @@ const Admin = () => {
 
   const handleUpdate = async (id) => {
     try {
-      const response = await fetch(`${apiUrl}/feedback/${id}`, {
+      const response = await fetch(`http://localhost:3000/api/feedback/${id}`, {
+      // const response = await fetch(`https://sgl-backend-one.vercel.app/api/feedback/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +69,8 @@ const Admin = () => {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetch(`${apiUrl}/feedback/${id}`, {
+       const response = await fetch(`http://localhost:3000/api/feedback/${id}`, {
+      // const response = await fetch(`https://sgl-backend-one.vercel.app/api/feedback/${id}`, {
         method: 'DELETE',
       });
 
@@ -138,6 +137,7 @@ const Admin = () => {
       }
     }));
   };
+
   const individualsList = [
     'Aishwarya', 'Akashkumar', 'Akhila', 'Anjali', 'Anudeep', 'Ashwini', 'Baji', 'Bharghav', 'Booja', 'Divya',
     'Harshit', 'Hemaletha', 'Hemendra', 'Hrithik', 'Ishika', 'Jahnavi', 'Jigsaya', 'Kalyani', 'Kiran', 'Kunmun',
