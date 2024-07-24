@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { FaMoon, FaSun } from 'react-icons/fa';
-import { gsap } from 'gsap';
 import Swal from 'sweetalert2';
+import axios from 'axios';
 
 const Form = () => {
   const initialFormData = {
@@ -22,8 +22,6 @@ const Form = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const formRef = useRef(null);
-
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -64,17 +62,15 @@ const Form = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('https://sgl-backend-xi.vercel.app/api/feedback', {
-        method: 'POST',
+      const response = await axios.post('https://sgl-backend-eight.vercel.app/api/feedback', formData, {
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': 'https://sgl.vercel.app',
         },
-        body: JSON.stringify(formData),
-        credentials: 'include', // Ensure credentials are included if needed
       });
-  
-      if (response.ok) {
+
+      console.log(response);
+
+      if (response.status === 200 || response.status === 201) {
         Swal.fire({
           title: 'Success!',
           text: 'Form data saved!',
@@ -92,6 +88,7 @@ const Form = () => {
         });
       }
     } catch (error) {
+      console.error(error);
       Swal.fire({
         title: 'Error!',
         text: 'An error occurred',
@@ -108,7 +105,6 @@ const Form = () => {
     'Rama Rao', 'Ravi Kumar', 'Raviteja', 'Shashank', 'Sheeja', 'Shreyas', 'Smitha', 'Sneha', 'Sravan', 'Srikanth',
     'Subham', 'Sumavanthi', 'Surabhi','Venkatesh'
   ];
-
   return (
     <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} min-h-screen p-8`}>
       <header className="flex justify-between items-center mb-8">
@@ -196,7 +192,7 @@ const Form = () => {
               >
                 <span>{formData.individuals.length > 0 ? formData.individuals.join(', ') : 'Select'}</span>
                 <svg className="w-4 h-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 3a1 1 0 01.832.445l4 6a1 1 0 01-1.664 1.11L10 5.432 6.832 10.555a1 1 0 11-1.664-1.11l4-6A1 1 0 0110 3z" clipRule="evenodd" />
+                  <path fillRule="evenodd" d="M10 3a1 1 0 01.832.445l4 6a1 1 0 01-1.664 1.11L10 5.432 6.832 10.555a1 1 0 11-1.664-1.11l4-6A1 1 0 0110 3z" clipRule="evenodd" />
                 </svg>
               </button>
               {dropdownOpen && (
