@@ -63,7 +63,7 @@ const Form = () => {
     e.preventDefault();
     try {
       // const response = await axios.post('http://localhost:3000/api/feedback', formData, {
-        const response = await axios.post('https://sglbk.vercejb;fsdsflsadfllsdfguis;apgfp;sdl.app/api/feedback', formData, {
+        const response = await axios.post('https://sglbk.vercel.app/api/feedback', formData, {
           headers: {
             'Content-Type': 'application/json',
           },
