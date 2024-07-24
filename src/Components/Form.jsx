@@ -81,7 +81,7 @@ const Form = () => {
         });
       } else {
         Swal.fire({
-          title: 'Error!',
+          title: 'Error',
           text: 'Failed to save form data',
           icon: 'error',
           confirmButtonText: 'OK'
