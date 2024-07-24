@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
@@ -11,10 +12,12 @@ const Admin = () => {
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
-      const response = await fetch('https://sgl-backend-eight.vercel.app/api/feedback');
-      // const response = await fetch('https://sgl-backend-one.vercel.app/api/feedback');
-      const data = await response.json();
-      setFeedbacks(data);
+      try {
+        const response = await axios.get('https://sglbk.vercel.app/api/feedback');
+        setFeedbacks(response.data);
+      } catch (error) {
+        console.error('Error fetching feedbacks:', error);
+      }
     };
 
     fetchFeedbacks();
@@ -27,16 +30,13 @@ const Admin = () => {
 
   const handleUpdate = async (id) => {
     try {
-      const response = await fetch(`https://sgl-backend-eight.vercel.app/api/feedback/${id}`, {
-      // const response = await fetch(`https://sgl-backend-one.vercel.app/api/feedback/${id}`, {
-        method: 'PUT',
+      const response = await axios.put(`https://sglbk.vercel.app/api/feedback/${id}`, updatedFeedback, {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(updatedFeedback),
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         Swal.fire({
           title: 'Success!',
           text: 'Feedback updated!',
@@ -69,12 +69,9 @@ const Admin = () => {
 
   const handleDelete = async (id) => {
     try {
-       const response = await fetch(`https://sgl-backend-eight.vercel.app/api/feedback/${id}`, {
-      // const response = await fetch(`https://sgl-backend-one.vercel.app/api/feedback/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await axios.delete(`https://sglbk.vercel.app/api/feedback/${id}`);
 
-      if (response.ok) {
+      if (response.status === 200) {
         Swal.fire({
           title: 'Success!',
           text: 'Feedback deleted!',
@@ -231,7 +228,7 @@ const Admin = () => {
             </div>
 
             <div className="mb-4">
-            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Select Individuals</label>
+              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Select Individuals</label>
               <div className="relative">
                 <button
                   type="button"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { FaMoon, FaSun } from 'react-icons/fa';
 
 const FeedbackDetails = () => {
@@ -10,11 +11,14 @@ const FeedbackDetails = () => {
   useEffect(() => {
     // Fetch all emails from the feedbacks
     const fetchEmails = async () => {
-       const response = await fetch('https://sgl-backend-eight.vercel.app/api/feedback');
-      // const response = await fetch('https://sgl-backend-one.vercel.app/api/feedback');
-      const data = await response.json();
-      const uniqueEmails = [...new Set(data.map(feedback => feedback.email))];
-      setEmails(uniqueEmails);
+      try {
+        const response = await axios.get('https://sglbk.vercel.app/api/feedback');
+        const data = response.data;
+        const uniqueEmails = [...new Set(data.map(feedback => feedback.email))];
+        setEmails(uniqueEmails);
+      } catch (error) {
+        console.error('Error fetching emails:', error);
+      }
     };
 
     fetchEmails();
@@ -24,10 +28,13 @@ const FeedbackDetails = () => {
     setSelectedEmail(e.target.value);
 
     // Fetch feedback details for the selected email
-     const response = await fetch(`https://sgl-backend-eight.vercel.app/api/feedback?email=${e.target.value}`);
-    // const response = await fetch(`https://sgl-backend-one.vercel.app/api/feedback?email=${e.target.value}`);
-    const data = await response.json();
-    setFeedback(data);
+    try {
+      const response = await axios.get(`https://sglbk.vercel.app/api/feedback?email=${e.target.value}`);
+      const data = response.data;
+      setFeedback(data);
+    } catch (error) {
+      console.error('Error fetching feedback details:', error);
+    }
   };
 
   return (
