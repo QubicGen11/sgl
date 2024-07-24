@@ -1,159 +1,88 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FaMoon, FaSun } from 'react-icons/fa';
-import Swal from 'sweetalert2';
 
 const Admin = () => {
   const [feedbacks, setFeedbacks] = useState([]);
-  const [editingFeedback, setEditingFeedback] = useState(null);
-  const [updatedFeedback, setUpdatedFeedback] = useState({});
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [individualsList, setIndividualsList] = useState([]);
+  const [servicesList, setServicesList] = useState([]);
+  const [showEditIndividuals, setShowEditIndividuals] = useState(false);
+  const [showEditServices, setShowEditServices] = useState(false);
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
-        const response = await axios.get('https://sglbk.vercel.app/api/feedback');
+        const response = await axios.get('http://localhost:3000/api/feedback');
         setFeedbacks(response.data);
       } catch (error) {
         console.error('Error fetching feedbacks:', error);
       }
     };
 
+    const fetchLists = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/api/lists');
+        setIndividualsList(response.data.individualsList);
+        setServicesList(response.data.servicesList);
+      } catch (error) {
+        console.error('Error fetching lists:', error);
+      }
+    };
+
     fetchFeedbacks();
+    fetchLists();
   }, []);
 
-  const handleEdit = (feedback) => {
-    setEditingFeedback(feedback);
-    setUpdatedFeedback(feedback);
-  };
-
-  const handleUpdate = async (id) => {
+  const handleUpdateIndividualsList = async (updatedList) => {
     try {
-      const response = await axios.put(`https://sglbk.vercel.app/api/feedback/${id}`, updatedFeedback, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 200) {
-        Swal.fire({
-          title: 'Success!',
-          text: 'Feedback updated!',
-          icon: 'success',
-          confirmButtonText: 'OK',
-        });
-
-        const updatedFeedbacks = feedbacks.map((feedback) =>
-          feedback._id === id ? updatedFeedback : feedback
-        );
-        setFeedbacks(updatedFeedbacks);
-        setEditingFeedback(null);
-      } else {
-        Swal.fire({
-          title: 'Error!',
-          text: 'Failed to update feedback',
-          icon: 'error',
-          confirmButtonText: 'OK',
-        });
-      }
+      await axios.post('http://localhost:3000/api/lists/individuals', { updatedList });
+      setIndividualsList(updatedList);
+      setShowEditIndividuals(false);
     } catch (error) {
-      Swal.fire({
-        title: 'Error!',
-        text: 'An error occurred',
-        icon: 'error',
-        confirmButtonText: 'OK',
-      });
+      console.error('Error updating individuals list:', error);
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleUpdateServicesList = async (updatedList) => {
     try {
-      const response = await axios.delete(`https://sglbk.vercel.app/api/feedback/${id}`);
-
-      if (response.status === 200) {
-        Swal.fire({
-          title: 'Success!',
-          text: 'Feedback deleted!',
-          icon: 'success',
-          confirmButtonText: 'OK',
-        });
-
-        const updatedFeedbacks = feedbacks.filter((feedback) => feedback._id !== id);
-        setFeedbacks(updatedFeedbacks);
-      } else {
-        Swal.fire({
-          title: 'Error!',
-          text: 'Failed to delete feedback',
-          icon: 'error',
-          confirmButtonText: 'OK',
-        });
-      }
+      await axios.post('http://localhost:3000/api/lists/services', { updatedList });
+      setServicesList(updatedList);
+      setShowEditServices(false);
     } catch (error) {
-      Swal.fire({
-        title: 'Error!',
-        text: 'An error occurred',
-        icon: 'error',
-        confirmButtonText: 'OK',
-      });
+      console.error('Error updating services list:', error);
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setUpdatedFeedback({
-      ...updatedFeedback,
-      [name]: value,
-    });
+  const handleShowFeedback = (feedback) => {
+    setSelectedFeedback(feedback);
   };
-
-  const handleCheckboxChange = (e, field) => {
-    const { value, checked } = e.target;
-    setUpdatedFeedback((prevData) => {
-      if (checked) {
-        return {
-          ...prevData,
-          [field]: [...prevData[field], value],
-        };
-      } else {
-        return {
-          ...prevData,
-          [field]: prevData[field].filter((item) => item !== value),
-        };
-      }
-    });
-  };
-
-  const handleRatingChange = (e, individual, field) => {
-    const { value } = e.target;
-    setUpdatedFeedback((prevData) => ({
-      ...prevData,
-      [field]: {
-        ...prevData[field],
-        [individual]: value
-      }
-    }));
-  };
-
-  const individualsList = [
-    'Aishwarya', 'Akashkumar', 'Akhila', 'Anjali', 'Anudeep', 'Ashwini', 'Baji', 'Bharghav', 'Booja', 'Divya',
-    'Harshit', 'Hemaletha', 'Hemendra', 'Hrithik', 'Ishika', 'Jahnavi', 'Jigsaya', 'Kalyani', 'Kiran', 'Kunmun',
-    'Lakshmana Rao', 'Manga', 'Mani', 'Manish', 'Manohar', 'Monica', 'Nikhita', 'Pradeep', 'Pranathi', 'Praveen',
-    'Rama Rao', 'Ravi Kumar', 'Raviteja', 'Shashank', 'Sheeja', 'Shreyas', 'Smitha', 'Sneha', 'Sravan', 'Srikanth',
-    'Subham', 'Sumavanthi', 'Surabhi', 'Venkatesh'
-  ];
 
   return (
     <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} min-h-screen p-8`}>
       <header className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-md"
-        >
-          {darkMode ? <FaSun className="mr-2" /> : <FaMoon className="mr-2" />}
-          {darkMode ? '' : ''}
-        </button>
+        <div>
+          <button
+            onClick={() => setShowEditIndividuals(true)}
+            className="bg-blue-500 text-white px-4 py-2 rounded-md mr-2"
+          >
+            Edit Individuals
+          </button>
+          <button
+            onClick={() => setShowEditServices(true)}
+            className="bg-blue-500 text-white px-4 py-2 rounded-md mr-2"
+          >
+            Edit Services
+          </button>
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-md"
+          >
+            {darkMode ? <FaSun className="mr-2" /> : <FaMoon className="mr-2" />}
+          </button>
+        </div>
       </header>
 
       <div className="overflow-x-auto">
@@ -174,16 +103,10 @@ const Admin = () => {
                 <td className="py-2">{feedback.phoneNumber}</td>
                 <td className="py-2">
                   <button
-                    className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                    onClick={() => handleEdit(feedback)}
+                    className="bg-blue-500 text-white px-2 py-1 rounded mr-2"
+                    onClick={() => handleShowFeedback(feedback)}
                   >
-                    Edit
-                  </button>
-                  <button
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                    onClick={() => handleDelete(feedback._id)}
-                  >
-                    Delete
+                    Show
                   </button>
                 </td>
               </tr>
@@ -192,173 +115,252 @@ const Admin = () => {
         </table>
       </div>
 
-      {editingFeedback && (
+      {selectedFeedback && (
         <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-4 rounded shadow-md mt-4`}>
-          <h3 className="text-lg font-semibold mb-2">Edit Feedback</h3>
-          <form onSubmit={(e) => { e.preventDefault(); handleUpdate(editingFeedback._id); }}>
-            <div className="mb-4">
-              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email</label>
-              <input
-                type="email"
-                name="email"
-                value={updatedFeedback.email}
-                onChange={handleChange}
-                className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
-              />
-            </div>
-            <div className="mb-4">
-              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Full Name</label>
-              <input
-                type="text"
-                name="fullName"
-                value={updatedFeedback.fullName}
-                onChange={handleChange}
-                className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
-              />
-            </div>
-            <div className="mb-4">
-              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Phone Number</label>
-              <input
-                type="text"
-                name="phoneNumber"
-                value={updatedFeedback.phoneNumber}
-                onChange={handleChange}
-                className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Select Individuals</label>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className={`mt-1 flex items-center justify-between w-full h-14 overflow-y-auto p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'} rounded`}
-                >
-                  <span>{updatedFeedback.individuals?.length > 0 ? updatedFeedback.individuals.join(', ') : 'Select'}</span>
-                  <svg className="w-4 h-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 3a1 1 0 01.832.445l4 6a1 1 0 01-1.664 1.11L10 5.432 6.832 10.555a1 1 0 11-1.664-1.11l4-6A1 1 0 0110 3z" clipRule="evenodd" />
-                  </svg>
-                </button>
-                {dropdownOpen && (
-                  <div className={`absolute mt-1 w-full h-36 overflow-y-auto rounded-md shadow-lg ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
-                    <div className="py-1">
-                      {individualsList.map((individual) => (
-                        <div key={individual} className="flex items-center px-4 py-2">
-                          <input
-                            type="checkbox"
-                            value={individual}
-                            checked={updatedFeedback.individuals?.includes(individual)}
-                            onChange={(e) => handleCheckboxChange(e, 'individuals')}
-                            className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                          />
-                          <label className={`ml-2 block text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            {individual}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {updatedFeedback.individuals?.length > 0 && updatedFeedback.individuals.map((individual) => (
-              <div key={individual}>
-                <h3 className="text-lg font-semibold mb-2">{individual}</h3>
-
-                <div className="mb-4">
-                  <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Professionalism Rating</label>
-                  <div className="flex justify-between mt-2">
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <div key={rating} className="flex items-center">
-                        <input
-                          type="radio"
-                          name={`professionalism-${individual}`}
-                          value={rating}
-                          checked={updatedFeedback.professionalism?.[individual] === String(rating)}
-                          onChange={(e) => handleRatingChange(e, individual, 'professionalism')}
-                          className="h-4 w-4 text-indigo-600 border-gray-300"
-                        />
-                        <label className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{rating}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Response Time Rating</label>
-                  <div className="flex justify-between mt-2">
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <div key={rating} className="flex items-center">
-                        <input
-                          type="radio"
-                          name={`responseTime-${individual}`}
-                          value={rating}
-                          checked={updatedFeedback.responseTime?.[individual] === String(rating)}
-                          onChange={(e) => handleRatingChange(e, individual, 'responseTime')}
-                          className="h-4 w-4 text-indigo-600 border-gray-300"
-                        />
-                        <label className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{rating}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Overall Services Rating</label>
-                  <div className="flex justify-between mt-2">
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <div key={rating} className="flex items-center">
-                        <input
-                          type="radio"
-                          name={`overallServices-${individual}`}
-                          value={rating}
-                          checked={updatedFeedback.overallServices?.[individual] === String(rating)}
-                          onChange={(e) => handleRatingChange(e, individual, 'overallServices')}
-                          className="h-4 w-4 text-indigo-600 border-gray-300"
-                        />
-                        <label className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{rating}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            <div className="mb-4">
-              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Feedback</label>
-              <textarea
-                name="feedback"
-                value={updatedFeedback.feedback}
-                onChange={handleChange}
-                className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Recommend</label>
+          <h3 className="text-lg font-semibold mb-2">Feedback Details</h3>
+          <div className="mb-4">
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email</label>
+            <input
+              type="email"
+              value={selectedFeedback.email}
+              readOnly
+              className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+            />
+          </div>
+          <div className="mb-4">
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>First Name</label>
+            <input
+              type="text"
+              value={selectedFeedback.firstName}
+              readOnly
+              className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+            />
+          </div>
+          <div className="mb-4">
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Last Name</label>
+            <input
+              type="text"
+              value={selectedFeedback.lastName}
+              readOnly
+              className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+            />
+          </div>
+          <div className="mb-4">
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Phone Number</label>
+            <input
+              type="text"
+              value={selectedFeedback.phoneNumber}
+              readOnly
+              className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+            />
+          </div>
+          <div className="mb-4">
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Services</label>
+            <input
+              type="text"
+              value={selectedFeedback.services.join(', ')}
+              readOnly
+              className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+            />
+          </div>
+          <div className="mb-4">
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Individuals</label>
+            <input
+              type="text"
+              value={selectedFeedback.individuals.join(', ')}
+              readOnly
+              className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+            />
+          </div>
+          {selectedFeedback.individuals.map((individual) => (
+            <div key={individual} className="mb-4">
+              <h4 className="text-lg font-semibold mb-2">{individual}</h4>
+              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Professionalism Rating</label>
               <div className="flex justify-between mt-2">
-                {['Yes', 'No', 'Maybe'].map((option) => (
-                  <div key={option} className="flex items-center">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <div key={rating} className="flex items-center">
                     <input
                       type="radio"
-                      name="recommend"
-                      value={option}
-                      checked={updatedFeedback.recommend === option}
-                      onChange={handleChange}
+                      value={rating}
+                      checked={selectedFeedback.professionalism[individual] === String(rating)}
+                      readOnly
                       className="h-4 w-4 text-indigo-600 border-gray-300"
                     />
-                    <label className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{option}</label>
+                    <label className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{rating}</label>
+                  </div>
+                ))}
+              </div>
+              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Response Time Rating</label>
+              <div className="flex justify-between mt-2">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <div key={rating} className="flex items-center">
+                    <input
+                      type="radio"
+                      value={rating}
+                      checked={selectedFeedback.responseTime[individual] === String(rating)}
+                      readOnly
+                      className="h-4 w-4 text-indigo-600 border-gray-300"
+                    />
+                    <label className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{rating}</label>
+                  </div>
+                ))}
+              </div>
+              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Overall Services Rating</label>
+              <div className="flex justify-between mt-2">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <div key={rating} className="flex items-center">
+                    <input
+                      type="radio"
+                      value={rating}
+                      checked={selectedFeedback.overallServices[individual] === String(rating)}
+                      readOnly
+                      className="h-4 w-4 text-indigo-600 border-gray-300"
+                    />
+                    <label className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{rating}</label>
                   </div>
                 ))}
               </div>
             </div>
-
-            <div className="flex justify-end">
-              <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-600">Update</button>
+          ))}
+          <div className="mb-4">
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Feedback</label>
+            <textarea
+              value={selectedFeedback.feedback}
+              readOnly
+              className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+            />
+          </div>
+          <div className="mb-4">
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Recommend</label>
+            <div className="flex justify-between mt-2">
+              {['Yes', 'No', 'Maybe'].map((option) => (
+                <div key={option} className="flex items-center">
+                  <input
+                    type="radio"
+                    value={option}
+                    checked={selectedFeedback.recommend === option}
+                    readOnly
+                    className="h-4 w-4 text-indigo-600 border-gray-300"
+                  />
+                  <label className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{option}</label>
+                </div>
+              ))}
             </div>
-          </form>
+          </div>
+          <div className="flex justify-end">
+            <button
+              onClick={() => setSelectedFeedback(null)}
+              className="bg-gray-500 text-white px-4 py-2 rounded"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showEditIndividuals && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center ">
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-4 rounded shadow-md h-96 overflow-y-auto`}>
+            <h2 className="text-xl font-bold mb-4">Edit Individuals List</h2>
+            {individualsList.map((individual, index) => (
+              <div key={index} className="flex items-center mb-2 ">
+                <input
+                  type="text"
+                  value={individual}
+                  onChange={(e) => {
+                    const updatedList = [...individualsList];
+                    updatedList[index] = e.target.value;
+                    setIndividualsList(updatedList);
+                  }}
+                  className="flex-1 mr-2 p-2 border border-gray-300 rounded"
+                />
+                <button
+                  onClick={() => {
+                    const updatedList = individualsList.filter((_, i) => i !== index);
+                    setIndividualsList(updatedList);
+                  }}
+                  className="bg-red-500 text-white px-2 py-1 rounded"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                setIndividualsList([...individualsList, '']);
+              }}
+              className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+            >
+              Add Individual
+            </button>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => handleUpdateIndividualsList(individualsList)}
+                className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setShowEditIndividuals(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditServices && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-4 rounded shadow-md`}>
+            <h2 className="text-xl font-bold mb-4">Edit Services List</h2>
+            {servicesList.map((service, index) => (
+              <div key={index} className="flex items-center mb-2">
+                <input
+                  type="text"
+                  value={service}
+                  onChange={(e) => {
+                    const updatedList = [...servicesList];
+                    updatedList[index] = e.target.value;
+                    setServicesList(updatedList);
+                  }}
+                  className="flex-1 mr-2 p-2 border border-gray-300 rounded"
+                />
+                <button
+                  onClick={() => {
+                    const updatedList = servicesList.filter((_, i) => i !== index);
+                    setServicesList(updatedList);
+                  }}
+                  className="bg-red-500 text-white px-2 py-1 rounded"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                setServicesList([...servicesList, '']);
+              }}
+              className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+            >
+              Add Service
+            </button>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => handleUpdateServicesList(servicesList)}
+                className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setShowEditServices(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

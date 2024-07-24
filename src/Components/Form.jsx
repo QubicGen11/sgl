@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import axios from 'axios';
@@ -7,7 +7,8 @@ const Form = () => {
   const initialFormData = {
     email: '',
     organizationName: '',
-    fullName: '',
+    firstName: '',
+    lastName: '',
     phoneNumber: '',
     services: [],
     individuals: [],
@@ -22,6 +23,24 @@ const Form = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const formRef = useRef(null);
+
+  const [individualsList, setIndividualsList] = useState([]);
+  const [servicesList, setServicesList] = useState([]);
+
+  useEffect(() => {
+    // Fetch individualsList and servicesList from the backend
+    const fetchLists = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/api/lists');
+        setIndividualsList(response.data.individualsList);
+        setServicesList(response.data.servicesList);
+      } catch (error) {
+        console.error('Error fetching lists:', error);
+      }
+    };
+
+    fetchLists();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -62,13 +81,11 @@ const Form = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // const response = await axios.post('http://localhost:3000/api/feedback', formData, {
-        const response = await axios.post('https://sglbk.vercel.app/api/feedback', formData, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
+      const response = await axios.post('http://localhost:3000/api/feedback', formData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       console.log(response);
 
@@ -100,19 +117,11 @@ const Form = () => {
     }
   };
 
-  const individualsList = [
-    'Aishwarya', 'Akashkumar', 'Akhila', 'Anjali', 'Anudeep', 'Ashwini', 'Baji', 'Bharghav', 'Booja', 'Divya',
-    'Harshit', 'Hemaletha', 'Hemendra', 'Hrithik', 'Ishika', 'Jahnavi', 'Jigsaya', 'Kalyani', 'Kiran', 'Kunmun',
-    'Lakshmana Rao', 'Manga', 'Mani', 'Manish', 'Manohar', 'Monica', 'Nikhita', 'Pradeep', 'Pranathi', 'Praveen',
-    'Rama Rao', 'Ravi Kumar', 'Raviteja', 'Shashank', 'Sheeja', 'Shreyas', 'Smitha', 'Sneha', 'Sravan', 'Srikanth',
-    'Subham', 'Sumavanthi', 'Surabhi','Venkatesh'
-  ];
-
   return (
     <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} min-h-screen p-8`}>
       <header className="flex justify-between items-center mb-8">
         <img
-          src="https://somireddylaw.com/wp-content/uploads/2022/10/slg-logo-_2_.webp" // Replace with your logo URL
+          src="https://somireddylaw.com/wp-content/uploads/2022/10/slg-logo-_2_.webp"
           alt="Somireddy Law Group"
           className="w-48 transition-transform duration-300 ease-in-out transform hover:scale-110"
         />
@@ -121,7 +130,6 @@ const Form = () => {
           className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-md"
         >
           {darkMode ? <FaSun className="mr-2" /> : <FaMoon className="mr-2" />}
-          {darkMode ? '' : ''}
         </button>
       </header>
 
@@ -155,11 +163,23 @@ const Form = () => {
           </div>
 
           <div className="mb-4">
-            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Full Name <span className="text-red-500">*</span></label>
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>First Name <span className="text-red-500">*</span></label>
             <input
               type="text"
-              name="fullName"
-              value={formData.fullName}
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+              required
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Last Name <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
               onChange={handleChange}
               className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
               required
@@ -169,7 +189,7 @@ const Form = () => {
           <div className="mb-4">
             <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Please select one of the following services provided by Somireddy Law Group that you have received. <span className="text-red-500">*</span></label>
             <div className="mt-2">
-              {['Immigration', 'Litigation', 'Corporate', 'Employment', 'Family Based Immigration', 'Other'].map((service) => (
+              {servicesList.map((service) => (
                 <div key={service} className="flex items-center">
                   <input
                     type="checkbox"
