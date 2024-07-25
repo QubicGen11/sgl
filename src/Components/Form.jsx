@@ -173,7 +173,7 @@ const Form = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
-        <h2 className="text-center text-2xl font-bold mb-4">Somireddy Law Group PLLC - Customer Feedback</h2>
+        <h2 className="text-center text-2xl font-bold mb-4">Somireddy Law Group PLLC - Client Feedback</h2>
         <p className="text-center mb-4">We are dedicated to delivering the highest quality of service to our clients. Your feedback is invaluable to enable us to better meet your expectations. We sincerely appreciate your time and cooperation in this matter. To assist us in improving our services, we kindly request your input on the following points:</p>
         
         <form onSubmit={handleSubmit}>

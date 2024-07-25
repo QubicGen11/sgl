@@ -220,15 +220,16 @@ const FeedbackDetails = () => {
 
   return (
     <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-[rgba(255,255,255,0)] text-gray-900'} min-h-screen p-8 transition-all duration-300`}>
-     
+
 
       <motion.div
-        className={`${darkMode ? 'bg-gray-800' : 'bg-white'} max-w-4xl mx-auto p-8 rounded-lg shadow-lg`}
+        className={`${darkMode ? 'bg-gray-800' : 'bg-[rgba(255,255,255,0.1)]'} backdrop-blur-3xl max-w-4xl mx-auto p-8 rounded-lg shadow-lg`}
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
+        style={{backdropFilter:"blur('20px)"}}
       >
-        <h2 className="text-center text-2xl font-bold mb-4">Feedback Details</h2>
+        <h2 className="text-center text-2xl font-bold mb-4 text-white">Feedback Details</h2>
         <div className="flex justify-between mb-4">
           <button onClick={() => toggleFilter('email')} className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Search by Email</button>
           <button onClick={() => toggleFilter('date')} className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Filter by Date</button>
@@ -237,16 +238,16 @@ const FeedbackDetails = () => {
 
         {showEmailFilter && (
           <form onSubmit={handleSearchSubmit} className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Search by Email</label>
+            <label className="block text-sm font-medium text-white">Search by Email</label>
             <div className="relative">
-              <div className='flex w-6/12 '>
+              <div className='flex'>
 
               <input
                 type="text"
                 value={searchEmail}
                 onChange={handleSearchChange}
                 placeholder="Enter email"
-                className="mt-1 block w-full p-2 border border-gray-300 bg-white rounded-lg text-black"
+                className="mt-1 block w-5/12 rounded-lg p-2 border border-gray-300 bg-white text-black "
               />
               <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Search</button>
               </div>
@@ -255,7 +256,7 @@ const FeedbackDetails = () => {
                   {suggestions.map((suggestion, index) => (
                     <li
                       key={index}
-                      className="p-2 cursor-pointer hover:bg-gray-200"
+                      className="p-2 cursor-pointer text-black hover:bg-gray-200"
                       onClick={() => handleSuggestionClick(suggestion)}
                     >
                       {suggestion}
@@ -283,23 +284,23 @@ const FeedbackDetails = () => {
         )}
 
         <div className="overflow-y-auto" style={{ maxHeight: '400px' }}>
-          <table className="min-w-full bg-white shadow-md rounded my-6">
-            <thead>
-              <tr>
-                <th className="py-3 px-6 bg-gray-200 text-gray-600 font-bold uppercase text-sm text-left">Email</th>
-                <th className="py-3 px-6 bg-gray-200 text-gray-600 font-bold uppercase text-sm text-left">First Name</th>
-                <th className="py-3 px-6 bg-gray-200 text-gray-600 font-bold uppercase text-sm text-left">Last Name</th>
-                <th className="py-3 px-6 bg-gray-200 text-gray-600 font-bold uppercase text-sm text-left">Actions</th>
+          <table className="min-w-full bg-[rgba(255,255,255,0.1)] shadow-md rounded my-6">
+            <thead className='bg-[rgba(255,255,255,0.1)] '>
+              <tr className='bg-[rgba(255,255,255,0.1)] '>
+                <th className="py-3 px-6    bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">Email</th>
+                <th className="py-3 px-6    bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">First Name</th>
+                <th className="py-3 px-6    bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">Last Name</th>
+                <th className="py-3 px-6   bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">Actions</th>
               </tr>
             </thead>
             <tbody>
               {showAllFeedbacks ? (
                 feedbacks.map((feedback, index) => (
                   <tr key={index} className="border-b">
-                    <td className="py-3 px-6">{feedback.email}</td>
-                    <td className="py-3 px-6">{feedback.firstName}</td>
-                    <td className="py-3 px-6">{feedback.lastName}</td>
-                    <td className="py-3 px-6">
+                    <td className="py-3 px-6  text-white">{feedback.email}</td>
+                    <td className="py-3 px-6 text-white">{feedback.firstName}</td>
+                    <td className="py-3 px-6 text-white">{feedback.lastName}</td>
+                    <td className="py-3 px-6 text-white">
                       <button onClick={() => setSelectedFeedback(feedback)} className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">View More</button>
                     </td>
                   </tr>
@@ -307,10 +308,10 @@ const FeedbackDetails = () => {
               ) : (
                 feedbacks.slice(0, 3).map((feedback, index) => (
                   <tr key={index} className="border-b">
-                    <td className="py-3 px-6">{feedback.email}</td>
-                    <td className="py-3 px-6">{feedback.firstName}</td>
-                    <td className="py-3 px-6">{feedback.lastName}</td>
-                    <td className="py-3 px-6">
+                    <td className="py-3 px-6 text-white">{feedback.email}</td>
+                    <td className="py-3 px-6 text-white">{feedback.firstName}</td>
+                    <td className="py-3 px-6 text-white">{feedback.lastName}</td>
+                    <td className="py-3 px-6 text-white">
                       <button onClick={() => setSelectedFeedback(feedback)} className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">View More</button>
                     </td>
                   </tr>
@@ -321,8 +322,9 @@ const FeedbackDetails = () => {
         </div>
 
         <div className="flex justify-end mb-4">
-          <button onClick={exportAllToPDF} className="bg-red-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105 mr-2">Export All to PDF</button>
-          <button onClick={exportAllToExcel} className="bg-green-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Export All to Excel</button>
+    
+          <button onClick={exportAllToPDF} className="bg-green-500 text-white px-4 py-2 rounded-md shadow-sm ransform transition-all duration-500 ease-in-out hover:scale-110 hover:brightness-105 hover:animate-pulse active:animate-bounce mr-5" >    Export to PDF</button>
+          <button onClick={exportAllToExcel} className="bg-green-500 text-white px-4 py-2 rounded-md shadow-sm ransform transition-all duration-500 ease-in-out hover:scale-110 hover:brightness-105 hover:animate-pulse active:animate-bounce">Export  to Excel</button>
         </div>
 
         {selectedFeedback && (
@@ -336,7 +338,7 @@ const FeedbackDetails = () => {
             >
               <div className=''>
                 <h3 className="text-lg font-semibold mb-2">Feedback Details</h3>
-                <button onClick={() => setSelectedFeedback(null)} className="absolute top-2 right-2 text-gray-500 text-3xl">&times;</button>
+                <button onClick={() => setSelectedFeedback(null)} className="absolute top-2 right-2 text-black text-3xl">&times;</button>
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700">Email</label>
@@ -465,7 +467,7 @@ const FeedbackDetails = () => {
               </div>
             </motion.div>
           </div>
-        )}
+        )}̉̉̉̉
       </motion.div>
     </div>
   );

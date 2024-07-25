@@ -81,7 +81,7 @@ const Admin = () => {
             onClick={() => setViewMode('view')}
             className={`bg-blue-500 text-white px-4 py-2 rounded-md ${viewMode === 'view' ? 'bg-blue-700' : ''}`}
           >
-            View Feedback
+            View Feedback 
           </button>
           <div
             onMouseEnter={handleMouseEnter}
