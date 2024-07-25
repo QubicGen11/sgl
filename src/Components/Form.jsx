@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import axios from 'axios';
+import { motion } from 'framer-motion';
 
 const Form = () => {
   const initialFormData = {
@@ -20,6 +21,7 @@ const Form = () => {
   };
 
   const [formData, setFormData] = useState(initialFormData);
+  const [errors, setErrors] = useState({});
   const [darkMode, setDarkMode] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const formRef = useRef(null);
@@ -78,16 +80,48 @@ const Form = () => {
     }));
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.email) newErrors.email = 'Email is required';
+    if (!formData.firstName) newErrors.firstName = 'First Name is required';
+    if (!formData.lastName) newErrors.lastName = 'Last Name is required';
+    if (!formData.phoneNumber) newErrors.phoneNumber = 'Phone number is required';
+    if (formData.services.length === 0) newErrors.services = 'At least one service must be selected';
+    if (formData.individuals.length === 0) newErrors.individuals = 'At least one individual must be selected';
+    formData.individuals.forEach(individual => {
+      if (!formData.professionalism[individual]) {
+        newErrors[`professionalism-${individual}`] = `Professionalism rating for ${individual} is required`;
+      }
+      if (!formData.responseTime[individual]) {
+        newErrors[`responseTime-${individual}`] = `Response time rating for ${individual} is required`;
+      }
+      if (!formData.overallServices[individual]) {
+        newErrors[`overallServices-${individual}`] = `Overall services rating for ${individual} is required`;
+      }
+    });
+    if (!formData.feedback) newErrors.feedback = 'Feedback is required';
+    if (!formData.recommend) newErrors.recommend = 'Recommendation is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Please fill out all required fields',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+      return;
+    }
     try {
       const response = await axios.post('http://localhost:3000/api/feedback', formData, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
-
-      console.log(response);
 
       if (response.status === 200 || response.status === 201) {
         Swal.fire({
@@ -118,7 +152,7 @@ const Form = () => {
   };
 
   return (
-    <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} min-h-screen p-8`}>
+    <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} min-h-screen p-8 transition-all duration-300`}>
       <header className="flex justify-between items-center mb-8">
         <img
           src="https://somireddylaw.com/wp-content/uploads/2022/10/slg-logo-_2_.webp"
@@ -133,7 +167,12 @@ const Form = () => {
         </button>
       </header>
 
-      <div ref={formRef} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} max-w-4xl mx-auto p-8 rounded-lg shadow-lg`}>
+      <motion.div
+        className={`${darkMode ? 'bg-gray-800' : 'bg-white'} max-w-4xl mx-auto p-8 rounded-lg shadow-lg`}
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
         <h2 className="text-center text-2xl font-bold mb-4">Somireddy Law Group PLLC - Customer Feedback</h2>
         <p className="text-center mb-4">We are dedicated to delivering the highest quality of service to our clients. Your feedback is invaluable to enable us to better meet your expectations. We sincerely appreciate your time and cooperation in this matter. To assist us in improving our services, we kindly request your input on the following points:</p>
         
@@ -148,6 +187,7 @@ const Form = () => {
               className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
               required
             />
+            {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
           </div>
           
           <div className="mb-4">
@@ -160,6 +200,7 @@ const Form = () => {
               className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
               required
             />
+            {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
           </div>
 
           <div className="mb-4">
@@ -172,6 +213,7 @@ const Form = () => {
               className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
               required
             />
+            {errors.firstName && <p className="text-red-500 text-sm">{errors.firstName}</p>}
           </div>
 
           <div className="mb-4">
@@ -184,6 +226,7 @@ const Form = () => {
               className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
               required
             />
+            {errors.lastName && <p className="text-red-500 text-sm">{errors.lastName}</p>}
           </div>
 
           <div className="mb-4">
@@ -203,6 +246,7 @@ const Form = () => {
                 </div>
               ))}
             </div>
+            {errors.services && <p className="text-red-500 text-sm">{errors.services}</p>}
           </div>
 
           <div className="mb-4">
@@ -239,6 +283,7 @@ const Form = () => {
                 </div>
               )}
             </div>
+            {errors.individuals && <p className="text-red-500 text-sm">{errors.individuals}</p>}
           </div>
 
           {formData.individuals.length > 0 && formData.individuals.map((individual) => (
@@ -263,6 +308,7 @@ const Form = () => {
                     </div>
                   ))}
                 </div>
+                {errors[`professionalism-${individual}`] && <p className="text-red-500 text-sm">{errors[`professionalism-${individual}`]}</p>}
               </div>
 
               <div className="mb-4">
@@ -283,6 +329,7 @@ const Form = () => {
                     </div>
                   ))}
                 </div>
+                {errors[`responseTime-${individual}`] && <p className="text-red-500 text-sm">{errors[`responseTime-${individual}`]}</p>}
               </div>
 
               <div className="mb-4">
@@ -303,6 +350,7 @@ const Form = () => {
                     </div>
                   ))}
                 </div>
+                {errors[`overallServices-${individual}`] && <p className="text-red-500 text-sm">{errors[`overallServices-${individual}`]}</p>}
               </div>
             </div>
           ))}
@@ -316,6 +364,7 @@ const Form = () => {
               className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
               required
             />
+            {errors.feedback && <p className="text-red-500 text-sm">{errors.feedback}</p>}
           </div>
 
           <div className="mb-4">
@@ -336,13 +385,14 @@ const Form = () => {
                 </div>
               ))}
             </div>
+            {errors.recommend && <p className="text-red-500 text-sm">{errors.recommend}</p>}
           </div>
 
           <div className="flex justify-end">
             <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-600">Submit</button>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 };
