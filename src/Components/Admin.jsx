@@ -4,8 +4,8 @@ import FeedbackDetails from './FeedbackDetails';
 import axios from 'axios';
 
 const Admin = () => {
-  const [darkMode, setDarkMode] = useState(false);
-  const [viewMode, setViewMode] = useState('view'); // 'view', 'edit-individuals', or 'edit-services'
+  const [darkMode, setDarkMode] = useState(true);
+  const [viewMode, setViewMode] = useState('view'); 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [individualsList, setIndividualsList] = useState([]);
   const [servicesList, setServicesList] = useState([]);
@@ -81,7 +81,7 @@ const Admin = () => {
             onClick={() => setViewMode('view')}
             className={`bg-blue-500 text-white px-4 py-2 rounded-md ${viewMode === 'view' ? 'bg-blue-700' : ''}`}
           >
-            View All
+            View Feedback
           </button>
           <div
             onMouseEnter={handleMouseEnter}
@@ -110,12 +110,12 @@ const Admin = () => {
               </div>
             )}
           </div>
-          <button
+          {/* <button
             onClick={() => setDarkMode(!darkMode)}
             className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-md"
           >
             {darkMode ? <FaSun className="mr-2" /> : <FaMoon className="mr-2" />}
-          </button>
+          </button> */}
         </div>
 
         <div className="w-full max-w-4xl">
@@ -123,7 +123,7 @@ const Admin = () => {
           {viewMode === 'edit-individuals' && (
             <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
               <div className="bg-white p-4 rounded shadow-md h-96 overflow-y-auto">
-                <h2 className="text-xl font-bold mb-4">Edit Individuals List</h2>
+                <h2 className="text-xl font-bold mb-4 text-black">Edit Individuals List</h2>
                 {individualsList.map((individual, index) => (
                   <div key={index} className="flex items-center mb-2">
                     <input
@@ -134,7 +134,7 @@ const Admin = () => {
                         updatedList[index] = e.target.value;
                         setIndividualsList(updatedList);
                       }}
-                      className="flex-1 mr-2 p-2 border border-gray-300 rounded"
+                      className="flex-1 mr-2 p-2 text-black border border-gray-300 rounded"
                     />
                     <button
                       onClick={() => {
@@ -175,7 +175,7 @@ const Admin = () => {
           {viewMode === 'edit-services' && (
             <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
               <div className="bg-white p-4 rounded shadow-md">
-                <h2 className="text-xl font-bold mb-4">Edit Services List</h2>
+                <h2 className="text-xl font-bold mb-4 text-black">Edit Services List</h2>
                 {servicesList.map((service, index) => (
                   <div key={index} className="flex items-center mb-2">
                     <input
@@ -186,7 +186,7 @@ const Admin = () => {
                         updatedList[index] = e.target.value;
                         setServicesList(updatedList);
                       }}
-                      className="flex-1 mr-2 p-2 border border-gray-300 rounded"
+                      className="flex-1 text-black mr-2 p-2 border border-gray-300 rounded"
                     />
                     <button
                       onClick={() => {

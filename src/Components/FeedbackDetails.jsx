@@ -219,16 +219,8 @@ const FeedbackDetails = () => {
   };
 
   return (
-    <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-[rgba(255,255,255,0.1)] text-gray-900'} min-h-screen p-8 transition-all duration-300`}>
-      <header className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-white">Feedback Management</h1>
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-md transition-transform duration-300 ease-in-out hover:scale-105"
-        >
-          {darkMode ? <FaSun className="mr-2" /> : <FaMoon className="mr-2" />}
-        </button>
-      </header>
+    <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-[rgba(255,255,255,0)] text-gray-900'} min-h-screen p-8 transition-all duration-300`}>
+     
 
       <motion.div
         className={`${darkMode ? 'bg-gray-800' : 'bg-white'} max-w-4xl mx-auto p-8 rounded-lg shadow-lg`}
@@ -247,14 +239,17 @@ const FeedbackDetails = () => {
           <form onSubmit={handleSearchSubmit} className="mb-4">
             <label className="block text-sm font-medium text-gray-700">Search by Email</label>
             <div className="relative">
+              <div className='flex w-6/12 '>
+
               <input
                 type="text"
                 value={searchEmail}
                 onChange={handleSearchChange}
                 placeholder="Enter email"
-                className="mt-1 block w-full p-2 border border-gray-300 bg-white text-black"
+                className="mt-1 block w-full p-2 border border-gray-300 bg-white rounded-lg text-black"
               />
               <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Search</button>
+              </div>
               {suggestions.length > 0 && (
                 <ul className="absolute left-0 right-0 mt-2 bg-white shadow-lg border border-gray-300">
                   {suggestions.map((suggestion, index) => (
