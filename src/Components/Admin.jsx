@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { FaMoon, FaSun } from 'react-icons/fa';
+import { FaMoon, FaSun, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import FeedbackDetails from './FeedbackDetails';
 import axios from 'axios';
 
 const Admin = () => {
   const [darkMode, setDarkMode] = useState(true);
-  const [viewMode, setViewMode] = useState('view'); 
+  const [viewMode, setViewMode] = useState('view');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [individualsList, setIndividualsList] = useState([]);
   const [servicesList, setServicesList] = useState([]);
   const [feedbacks, setFeedbacks] = useState([]);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [currentPasswordVisible, setCurrentPasswordVisible] = useState(false);
+  const [newPasswordVisible, setNewPasswordVisible] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchLists = async () => {
@@ -51,6 +59,48 @@ const Admin = () => {
     } catch (error) {
       console.error('Error updating services list:', error);
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
+  const handleChangePasswordSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        'http://localhost:3000/api/admin/change-password',
+        { currentPassword, newPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setShowChangePassword(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      Swal.fire({
+        title: 'Success',
+        text: 'Password changed successfully',
+        icon: 'success',
+        confirmButtonText: 'OK',
+      });
+    } catch (error) {
+      console.error('Error changing password:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to change password',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+    }
+  };
+
+  const toggleCurrentPasswordVisibility = () => {
+    setCurrentPasswordVisible(!currentPasswordVisible);
+  };
+
+  const toggleNewPasswordVisibility = () => {
+    setNewPasswordVisible(!newPasswordVisible);
   };
 
   return (
@@ -110,12 +160,18 @@ const Admin = () => {
               </div>
             )}
           </div>
-          {/* <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-md"
+          <button
+            onClick={() => setShowChangePassword(true)}
+            className="bg-yellow-500 text-white px-4 py-2 rounded-md"
           >
-            {darkMode ? <FaSun className="mr-2" /> : <FaMoon className="mr-2" />}
-          </button> */}
+            Change Password
+          </button>
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 text-white px-4 py-2 rounded-md"
+          >
+            Logout
+          </button>
         </div>
 
         <div className="w-full max-w-4xl">
@@ -225,6 +281,66 @@ const Admin = () => {
             </div>
           )}
         </div>
+
+        {showChangePassword && (
+          <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
+            <div className="bg-white p-4 rounded shadow-md w-1/3">
+              <h2 className="text-xl font-bold mb-4 text-black">Change Password</h2>
+              <form onSubmit={handleChangePasswordSubmit}>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700">Current Password</label>
+                  <div className="relative">
+                    <input
+                      type={currentPasswordVisible ? 'text' : 'password'}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="mt-1 block w-full p-2 border text-black border-gray-300 rounded"
+                      required
+                    />
+                    <div
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                      onClick={toggleCurrentPasswordVisibility}
+                    >
+                      {currentPasswordVisible ? <FaEyeSlash className='text-black' /> : <FaEye className='text-black' />}
+                    </div>
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700">New Password</label>
+                  <div className="relative">
+                    <input
+                      type={newPasswordVisible ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="mt-1 block w-full p-2 border text-black border-gray-300 rounded"
+                      required
+                    />
+                    <div
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                      onClick={toggleNewPasswordVisibility}
+                    >
+                      {newPasswordVisible ? <FaEyeSlash className='text-black' /> : <FaEye className='text-black' />}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end mt-4">
+                  <button
+                    type="submit"
+                    className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setShowChangePassword(false)}
+                    className="bg-gray-500 text-white px-4 py-2 rounded"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

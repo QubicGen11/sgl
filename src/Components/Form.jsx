@@ -105,6 +105,8 @@ const Form = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -129,8 +131,14 @@ const Form = () => {
           text: 'Form data saved!',
           icon: 'success',
           confirmButtonText: 'OK'
-        }).then(() => {
+        }).then(async () => {
           setFormData(initialFormData);
+          // Send email
+          await axios.post('http://localhost:3000/api/mail/send-email', formData, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
         });
       } else {
         Swal.fire({

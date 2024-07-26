@@ -7,22 +7,32 @@ import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
 import { motion } from 'framer-motion';
 
+// Define your API URL here
+const API_URL = 'http://localhost:3000/api';
+
 const FeedbackDetails = () => {
   const [searchEmail, setSearchEmail] = useState('');
+  const [searchName, setSearchName] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
-  const [filterDate, setFilterDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [feedbacks, setFeedbacks] = useState([]);
   const [shortView, setShortView] = useState(true);
   const [showEmailFilter, setShowEmailFilter] = useState(true);
   const [showDateFilter, setShowDateFilter] = useState(false);
+  const [showNameFilter, setShowNameFilter] = useState(false);
   const [showAllFeedbacks, setShowAllFeedbacks] = useState(false);
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [feedbacksPerPage] = useState(5);
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/feedback');
+        const response = await axios.get(`${API_URL}/feedback`);
         setFeedbacks(response.data);
       } catch (error) {
         console.error('Error fetching feedbacks:', error);
@@ -32,32 +42,42 @@ const FeedbackDetails = () => {
   }, []);
 
   useEffect(() => {
-    if (searchEmail) {
-      const fetchSuggestions = async () => {
-        try {
-          const response = await axios.get(`http://localhost:3000/api/feedback/suggestions?email=${searchEmail}`);
+    const fetchSuggestions = async () => {
+      try {
+        if (searchEmail) {
+          const response = await axios.get(`${API_URL}/feedback/suggestions`, { params: { email: searchEmail } });
           setSuggestions(response.data);
-        } catch (error) {
-          console.error('Error fetching email suggestions:', error);
+        } else if (searchName) {
+          const response = await axios.get(`${API_URL}/feedback/suggestions`, { params: { name: searchName } });
+          setSuggestions(response.data);
+        } else {
+          setSuggestions([]);
         }
-      };
-      fetchSuggestions();
-    } else {
-      setSuggestions([]);
-    }
-  }, [searchEmail]);
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+      }
+    };
+
+    fetchSuggestions();
+  }, [searchEmail, searchName]);
 
   const handleSearchChange = (e) => {
     setSearchEmail(e.target.value);
+    setSearchName('');
+  };
+
+  const handleSearchNameChange = (e) => {
+    setSearchName(e.target.value);
+    setSearchEmail('');
   };
 
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
-    setSelectedFeedback(null);
+
     setShortView(true);
     setShowAllFeedbacks(false);
     try {
-      const response = await axios.get(`http://localhost:3000/api/feedback?email=${searchEmail}`);
+      const response = await axios.get(`${API_URL}/feedback`, { params: { email: searchEmail } });
       setSelectedFeedback(response.data);
     } catch (error) {
       console.error('Error fetching feedback details:', error);
@@ -70,14 +90,37 @@ const FeedbackDetails = () => {
     }
   };
 
-  const handleSuggestionClick = async (email) => {
-    setSearchEmail(email);
+  const handleSearchNameSubmit = async (e) => {
+    e.preventDefault();
+    setSelectedFeedback(null);
+    setShortView(true);
+    setShowAllFeedbacks(false);
+    try {
+      const response = await axios.get(`${API_URL}/feedback`, { params: { name: searchName } });
+      setSelectedFeedback(response.data);
+    } catch (error) {
+      console.error('Error fetching feedback details:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to fetch feedback details',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+    }
+  };
+
+  const handleSuggestionClick = async (suggestion) => {
+    if (searchEmail) {
+      setSearchEmail(suggestion);
+    } else if (searchName) {
+      setSearchName(suggestion);
+    }
     setSuggestions([]);
     setSelectedFeedback(null);
     setShortView(true);
     setShowAllFeedbacks(false);
     try {
-      const response = await axios.get(`http://localhost:3000/api/feedback?email=${email}`);
+      const response = await axios.get(`${API_URL}/feedback`, { params: { email: searchEmail || '', name: searchName || '' } });
       setSelectedFeedback(response.data);
     } catch (error) {
       console.error('Error fetching feedback details:', error);
@@ -95,7 +138,7 @@ const FeedbackDetails = () => {
     setSelectedFeedback(null);
     setShowAllFeedbacks(false);
     try {
-      const response = await axios.get(`http://localhost:3000/api/feedback/date-range?startDate=${filterDate}&endDate=${filterDate}`);
+      const response = await axios.get(`${API_URL}/feedback/date-range`, { params: { startDate, endDate } });
       setFeedbacks(response.data);
     } catch (error) {
       console.error('Error fetching feedbacks within date range:', error);
@@ -116,9 +159,15 @@ const FeedbackDetails = () => {
     if (filterType === 'email') {
       setShowEmailFilter(!showEmailFilter);
       setShowDateFilter(false);
+      setShowNameFilter(false);
     } else if (filterType === 'date') {
       setShowDateFilter(!showDateFilter);
       setShowEmailFilter(false);
+      setShowNameFilter(false);
+    } else if (filterType === 'name') {
+      setShowNameFilter(!showNameFilter);
+      setShowEmailFilter(false);
+      setShowDateFilter(false);
     }
   };
 
@@ -131,10 +180,29 @@ const FeedbackDetails = () => {
     return Object.entries(ratings).map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`).join(', ');
   };
 
+  const handleRowSelect = (e, feedback) => {
+    if (e.target.checked) {
+      setSelectedRows([...selectedRows, feedback]);
+    } else {
+      setSelectedRows(selectedRows.filter((row) => row !== feedback));
+    }
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedRows(feedbacks);
+      setSelectAll(true);
+    } else {
+      setSelectedRows([]);
+      setSelectAll(false);
+    }
+  };
+
   const exportAllToPDF = () => {
+    const dataToExport = selectedRows.length > 0 ? selectedRows : feedbacks;
     const doc = new jsPDF();
     doc.text('Feedback Details', 20, 10);
-    const tableData = feedbacks.map(feedback => ([
+    const tableData = dataToExport.map(feedback => ([
       feedback.email,
       feedback.firstName,
       feedback.lastName,
@@ -152,11 +220,12 @@ const FeedbackDetails = () => {
       head: [['Email', 'First Name', 'Last Name', 'Phone Number', 'Services', 'Individuals', 'Professionalism Ratings', 'Response Time Ratings', 'Overall Services Ratings', 'Feedback', 'Recommend']],
       body: tableData,
     });
-    doc.save('all-feedback-details.pdf');
+    doc.save('selected-feedback-details.pdf');
   };
 
   const exportAllToExcel = () => {
-    const feedbackData = feedbacks.map(feedback => ({
+    const dataToExport = selectedRows.length > 0 ? selectedRows : feedbacks;
+    const feedbackData = dataToExport.map(feedback => ({
       Email: feedback.email,
       FirstName: feedback.firstName,
       LastName: feedback.lastName,
@@ -172,67 +241,30 @@ const FeedbackDetails = () => {
     const worksheet = XLSX.utils.json_to_sheet(feedbackData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'FeedbackDetails');
-    XLSX.writeFile(workbook, 'all-feedback-details.xlsx');
+    XLSX.writeFile(workbook, 'selected-feedback-details.xlsx');
   };
 
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.text('Feedback Details', 20, 10);
-    doc.autoTable({
-      startY: 20,
-      head: [['Field', 'Value']],
-      body: [
-        ['Email', selectedFeedback.email],
-        ['First Name', selectedFeedback.firstName],
-        ['Last Name', selectedFeedback.lastName],
-        ['Phone Number', selectedFeedback.phoneNumber],
-        ['Services', selectedFeedback.services ? selectedFeedback.services.join(', ') : ''],
-        ['Individuals', selectedFeedback.individuals ? selectedFeedback.individuals.join(', ') : ''],
-        ['Professionalism Ratings', formatRatings(selectedFeedback.professionalism)],
-        ['Response Time Ratings', formatRatings(selectedFeedback.responseTime)],
-        ['Overall Services Ratings', formatRatings(selectedFeedback.overallServices)],
-        ['Feedback', selectedFeedback.feedback],
-        ['Recommend', selectedFeedback.recommend],
-      ],
-    });
-    doc.save('feedback-details.pdf');
-  };
+  // Pagination logic
+  const indexOfLastFeedback = currentPage * feedbacksPerPage;
+  const indexOfFirstFeedback = indexOfLastFeedback - feedbacksPerPage;
+  const currentFeedbacks = feedbacks.slice(indexOfFirstFeedback, indexOfLastFeedback);
 
-  const exportToExcel = () => {
-    const feedbackData = {
-      Email: selectedFeedback.email,
-      FirstName: selectedFeedback.firstName,
-      LastName: selectedFeedback.lastName,
-      PhoneNumber: selectedFeedback.phoneNumber,
-      Services: selectedFeedback.services ? selectedFeedback.services.join(', ') : '',
-      Individuals: selectedFeedback.individuals ? selectedFeedback.individuals.join(', ') : '',
-      ProfessionalismRatings: formatRatings(selectedFeedback.professionalism),
-      ResponseTimeRatings: formatRatings(selectedFeedback.responseTime),
-      OverallServicesRatings: formatRatings(selectedFeedback.overallServices),
-      Feedback: selectedFeedback.feedback,
-      Recommend: selectedFeedback.recommend,
-    };
-    const worksheet = XLSX.utils.json_to_sheet([feedbackData]);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'FeedbackDetails');
-    XLSX.writeFile(workbook, 'feedback-details.xlsx');
-  };
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-[rgba(255,255,255,0)] text-gray-900'} min-h-screen p-8 transition-all duration-300`}>
-
-
       <motion.div
         className={`${darkMode ? 'bg-gray-800' : 'bg-[rgba(255,255,255,0.1)]'} backdrop-blur-3xl max-w-4xl mx-auto p-8 rounded-lg shadow-lg`}
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        style={{backdropFilter:"blur('20px)"}}
+        style={{ backdropFilter: "blur('20px)" }}
       >
         <h2 className="text-center text-2xl font-bold mb-4 text-white">Feedback Details</h2>
         <div className="flex justify-between mb-4">
           <button onClick={() => toggleFilter('email')} className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Search by Email</button>
           <button onClick={() => toggleFilter('date')} className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Filter by Date</button>
+          <button onClick={() => toggleFilter('name')} className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Search by Name</button>
           <button onClick={handleViewAllFeedbacks} className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">View All Feedbacks</button>
         </div>
 
@@ -241,15 +273,45 @@ const FeedbackDetails = () => {
             <label className="block text-sm font-medium text-white">Search by Email</label>
             <div className="relative">
               <div className='flex'>
+                <input
+                  type="text"
+                  value={searchEmail}
+                  onChange={handleSearchChange}
+                  placeholder="Enter email"
+                  className="mt-1 block w-5/12 rounded-lg p-2 border border-gray-300 bg-white text-black "
+                />
+                <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Search</button>
+              </div>
+              {suggestions.length > 0 && (
+                <ul className="absolute left-0 right-0 mt-2 bg-white shadow-lg border border-gray-300">
+                  {suggestions.map((suggestion, index) => (
+                    <li
+                      key={index}
+                      className="p-2 cursor-pointer text-black hover:bg-gray-200"
+                      onClick={() => handleSuggestionClick(suggestion)}
+                    >
+                      {suggestion}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </form>
+        )}
 
-              <input
-                type="text"
-                value={searchEmail}
-                onChange={handleSearchChange}
-                placeholder="Enter email"
-                className="mt-1 block w-5/12 rounded-lg p-2 border border-gray-300 bg-white text-black "
-              />
-              <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Search</button>
+        {showNameFilter && (
+          <form onSubmit={handleSearchNameSubmit} className="mb-4">
+            <label className="block text-sm font-medium text-white">Search by Name</label>
+            <div className="relative">
+              <div className='flex'>
+                <input
+                  type="text"
+                  value={searchName}
+                  onChange={handleSearchNameChange}
+                  placeholder="Enter first name + last name"
+                  className="mt-1 block w-5/12 rounded-lg p-2 border border-gray-300 bg-white text-black "
+                />
+                <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Search</button>
               </div>
               {suggestions.length > 0 && (
                 <ul className="absolute left-0 right-0 mt-2 bg-white shadow-lg border border-gray-300">
@@ -274,8 +336,14 @@ const FeedbackDetails = () => {
             <div className="flex">
               <input
                 type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="mt-1 block w-1/2 p-2 border border-gray-300 bg-white text-black"
+              />
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
                 className="mt-1 block w-1/2 p-2 border border-gray-300 bg-white text-black"
               />
               <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Filter</button>
@@ -287,17 +355,31 @@ const FeedbackDetails = () => {
           <table className="min-w-full bg-[rgba(255,255,255,0.1)] shadow-md rounded my-6">
             <thead className='bg-[rgba(255,255,255,0.1)] '>
               <tr className='bg-[rgba(255,255,255,0.1)] '>
-                <th className="py-3 px-6    bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">Email</th>
-                <th className="py-3 px-6    bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">First Name</th>
-                <th className="py-3 px-6    bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">Last Name</th>
-                <th className="py-3 px-6   bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">Actions</th>
+                <th className="py-3 px-6 bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    onChange={handleSelectAll}
+                  />
+                </th>
+                <th className="py-3 px-6 bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">Email</th>
+                <th className="py-3 px-6 bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">First Name</th>
+                <th className="py-3 px-6 bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">Last Name</th>
+                <th className="py-3 px-6 bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">Actions</th>
               </tr>
             </thead>
             <tbody>
               {showAllFeedbacks ? (
-                feedbacks.map((feedback, index) => (
+                currentFeedbacks.map((feedback, index) => (
                   <tr key={index} className="border-b">
-                    <td className="py-3 px-6  text-white">{feedback.email}</td>
+                    <td className="py-3 px-6 text-white">
+                      <input
+                        type="checkbox"
+                        checked={selectedRows.includes(feedback)}
+                        onChange={(e) => handleRowSelect(e, feedback)}
+                      />
+                    </td>
+                    <td className="py-3 px-6 text-white">{feedback.email}</td>
                     <td className="py-3 px-6 text-white">{feedback.firstName}</td>
                     <td className="py-3 px-6 text-white">{feedback.lastName}</td>
                     <td className="py-3 px-6 text-white">
@@ -308,6 +390,13 @@ const FeedbackDetails = () => {
               ) : (
                 feedbacks.slice(0, 3).map((feedback, index) => (
                   <tr key={index} className="border-b">
+                    <td className="py-3 px-6 text-white">
+                      <input
+                        type="checkbox"
+                        checked={selectedRows.includes(feedback)}
+                        onChange={(e) => handleRowSelect(e, feedback)}
+                      />
+                    </td>
                     <td className="py-3 px-6 text-white">{feedback.email}</td>
                     <td className="py-3 px-6 text-white">{feedback.firstName}</td>
                     <td className="py-3 px-6 text-white">{feedback.lastName}</td>
@@ -319,12 +408,22 @@ const FeedbackDetails = () => {
               )}
             </tbody>
           </table>
+          {/* Pagination */}
+          <nav className="flex justify-center mt-4">
+            <ul className="flex pl-0 rounded list-none flex-wrap">
+              {Array.from({ length: Math.ceil(feedbacks.length / feedbacksPerPage) }, (_, index) => (
+                <li key={index} className="relative block py-2 px-3 leading-tight bg-white border border-gray-300 text-blue-500 hover:bg-gray-200">
+                  <button onClick={() => paginate(index + 1)} className={`${currentPage === index + 1 ? 'bg-blue-500 text-white' : ''} relative block py-2 px-3 leading-tight bg-white border border-gray-300 text-blue-500 hover:bg-gray-200`}>
+                    {index + 1}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
 
         <div className="flex justify-end mb-4">
-    
-          <button onClick={exportAllToPDF} className="bg-green-500 text-white px-4 py-2 rounded-md shadow-sm ransform transition-all duration-500 ease-in-out hover:scale-110 hover:brightness-105 hover:animate-pulse active:animate-bounce mr-5" >    Export to PDF</button>
-          <button onClick={exportAllToExcel} className="bg-green-500 text-white px-4 py-2 rounded-md shadow-sm ransform transition-all duration-500 ease-in-out hover:scale-110 hover:brightness-105 hover:animate-pulse active:animate-bounce">Export  to Excel</button>
+          <button onClick={exportAllToExcel} className="bg-green-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105 hover:brightness-105 hover:animate-pulse active:animate-bounce">Export to Excel</button>
         </div>
 
         {selectedFeedback && (
@@ -462,12 +561,11 @@ const FeedbackDetails = () => {
                 />
               </div>
               <div className="flex justify-end mt-4">
-                <button onClick={exportToPDF} className="bg-red-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105 mr-2">Export to PDF</button>
-                <button onClick={exportToExcel} className="bg-green-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Export to Excel</button>
+                <button onClick={exportAllToExcel} className="bg-green-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Export to Excel</button>
               </div>
             </motion.div>
           </div>
-        )}̉̉̉̉
+        )}
       </motion.div>
     </div>
   );
