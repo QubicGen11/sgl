@@ -34,7 +34,7 @@ const Form = () => {
     // Fetch individualsList and servicesList from the backend
     const fetchLists = async () => {
       try {
-        const response = await axios.get('http://localhost:8083/api/lists');
+        const response = await axios.get('http://172.210.51.159:8083/api/lists');
         setIndividualsList(response.data.individualsList);
         setServicesList(response.data.servicesList);
       } catch (error) {
@@ -119,7 +119,7 @@ const Form = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8083/api/feedback', formData, {
+      const response = await axios.post('http://172.210.51.159:8083/api/feedback', formData, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -135,7 +135,7 @@ const Form = () => {
           setFormData(initialFormData);
           setLoading(false);
           // Send email
-          await axios.post('http://localhost:8083/api/mail/send-email', formData, {
+          await axios.post('http://172.210.51.159:8083/api/mail/send-email', formData, {
             headers: {
               'Content-Type': 'application/json',
             },

@@ -11,7 +11,7 @@ const AdminForm = ({ editMode }) => {
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
-        const response = await axios.get('http://localhost:8083/api/feedback');
+        const response = await axios.get('http://172.210.51.159:8083/api/feedback');
         setFeedbacks(response.data);
       } catch (error) {
         console.error('Error fetching feedbacks:', error);
@@ -20,7 +20,7 @@ const AdminForm = ({ editMode }) => {
 
     const fetchLists = async () => {
       try {
-        const response = await axios.get('http://localhost:8083/api/lists');
+        const response = await axios.get('http://172.210.51.159:8083/api/lists');
         setIndividualsList(response.data.individualsList);
         setServicesList(response.data.servicesList);
       } catch (error) {
@@ -34,7 +34,7 @@ const AdminForm = ({ editMode }) => {
 
   const handleUpdateIndividualsList = async (updatedList) => {
     try {
-      await axios.post('http://localhost:8083/api/lists/individuals', { updatedList });
+      await axios.post('http://172.210.51.159:8083/api/lists/individuals', { updatedList });
       setIndividualsList(updatedList);
       setShowEditIndividuals(false);
     } catch (error) {
@@ -44,7 +44,7 @@ const AdminForm = ({ editMode }) => {
 
   const handleUpdateServicesList = async (updatedList) => {
     try {
-      await axios.post('http://localhost:8083/api/lists/services', { updatedList });
+      await axios.post('http://172.210.51.159:8083/api/lists/services', { updatedList });
       setServicesList(updatedList);
       setShowEditServices(false);
     } catch (error) {

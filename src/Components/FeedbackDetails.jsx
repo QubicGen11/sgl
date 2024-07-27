@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
 import { motion } from 'framer-motion';
 
-const API_URL = 'http://localhost:8083/api';
+const API_URL = 'http://172.210.51.159:8083/api';
 
 const FeedbackDetails = () => {
   const [searchEmail, setSearchEmail] = useState('');

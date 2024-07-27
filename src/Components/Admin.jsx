@@ -22,7 +22,7 @@ const Admin = () => {
   useEffect(() => {
     const fetchLists = async () => {
       try {
-        const response = await axios.get('http://localhost:8083/api/lists');
+        const response = await axios.get('http://172.210.51.159:8083/api/lists');
         setIndividualsList(response.data.individualsList);
         setServicesList(response.data.servicesList);
       } catch (error) {
@@ -43,7 +43,7 @@ const Admin = () => {
 
   const handleUpdateIndividualsList = async (updatedList) => {
     try {
-      await axios.post('http://localhost:8083/api/lists/individuals', { updatedList });
+      await axios.post('http://172.210.51.159:8083/api/lists/individuals', { updatedList });
       setIndividualsList(updatedList);
       setViewMode('view');
     } catch (error) {
@@ -53,7 +53,7 @@ const Admin = () => {
 
   const handleUpdateServicesList = async (updatedList) => {
     try {
-      await axios.post('http://localhost:8083/api/lists/services', { updatedList });
+      await axios.post('http://172.210.51.159:8083/api/lists/services', { updatedList });
       setServicesList(updatedList);
       setViewMode('view');
     } catch (error) {
@@ -71,7 +71,7 @@ const Admin = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://localhost:8083/api/admin/change-password',
+        'http://172.210.51.159:8083/api/admin/change-password',
         { currentPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
