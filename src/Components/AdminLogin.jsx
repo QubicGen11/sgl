@@ -12,7 +12,7 @@ const AdminLogin = () => {
     e.preventDefault();
     try {
       console.log('Sending request with:', { email, password });
-      const response = await axios.post('http://localhost:3000/api/admin/login', { email, password });
+      const response = await axios.post('http://localhost:8083/api/admin/login', { email, password });
       console.log('Response:', response);
       localStorage.setItem('token', response.data.token);
       navigate('/admin');
