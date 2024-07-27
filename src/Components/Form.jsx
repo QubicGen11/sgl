@@ -24,6 +24,7 @@ const Form = () => {
   const [errors, setErrors] = useState({});
   const [darkMode, setDarkMode] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const formRef = useRef(null);
 
   const [individualsList, setIndividualsList] = useState([]);
@@ -105,8 +106,6 @@ const Form = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -118,6 +117,7 @@ const Form = () => {
       });
       return;
     }
+    setLoading(true);
     try {
       const response = await axios.post('http://localhost:3000/api/feedback', formData, {
         headers: {
@@ -133,6 +133,7 @@ const Form = () => {
           confirmButtonText: 'OK'
         }).then(async () => {
           setFormData(initialFormData);
+          setLoading(false);
           // Send email
           await axios.post('http://localhost:3000/api/mail/send-email', formData, {
             headers: {
@@ -147,6 +148,7 @@ const Form = () => {
           icon: 'error',
           confirmButtonText: 'OK'
         });
+        setLoading(false);
       }
     } catch (error) {
       console.error(error);
@@ -156,6 +158,7 @@ const Form = () => {
         icon: 'error',
         confirmButtonText: 'OK'
       });
+      setLoading(false);
     }
   };
 
@@ -397,7 +400,9 @@ const Form = () => {
           </div>
 
           <div className="flex justify-end">
-            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-600">Submit</button>
+            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-600">
+              {loading ? 'Submitting...' : 'Submit'}
+            </button>
           </div>
         </form>
       </motion.div>

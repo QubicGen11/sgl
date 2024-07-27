@@ -7,7 +7,6 @@ import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
 import { motion } from 'framer-motion';
 
-// Define your API URL here
 const API_URL = 'http://localhost:3000/api';
 
 const FeedbackDetails = () => {
@@ -27,7 +26,7 @@ const FeedbackDetails = () => {
   const [selectedRows, setSelectedRows] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [feedbacksPerPage] = useState(5);
+  const [feedbacksPerPage] = useState(4);
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
@@ -46,9 +45,11 @@ const FeedbackDetails = () => {
       try {
         if (searchEmail) {
           const response = await axios.get(`${API_URL}/feedback/suggestions`, { params: { email: searchEmail } });
+          console.log('Email suggestions fetched:', response.data);
           setSuggestions(response.data);
         } else if (searchName) {
           const response = await axios.get(`${API_URL}/feedback/suggestions`, { params: { name: searchName } });
+          console.log('Name suggestions fetched:', response.data);
           setSuggestions(response.data);
         } else {
           setSuggestions([]);
@@ -69,15 +70,16 @@ const FeedbackDetails = () => {
   const handleSearchNameChange = (e) => {
     setSearchName(e.target.value);
     setSearchEmail('');
+    console.log('Search name changed:', e.target.value);
   };
 
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
-
     setShortView(true);
     setShowAllFeedbacks(false);
     try {
       const response = await axios.get(`${API_URL}/feedback`, { params: { email: searchEmail } });
+      console.log('Feedback fetched for email:', response.data);
       setSelectedFeedback(response.data);
     } catch (error) {
       console.error('Error fetching feedback details:', error);
@@ -97,7 +99,10 @@ const FeedbackDetails = () => {
     setShowAllFeedbacks(false);
     try {
       const response = await axios.get(`${API_URL}/feedback`, { params: { name: searchName } });
-      setSelectedFeedback(response.data);
+      console.log('Feedback fetched for name:', response.data);
+      if (response.data.length > 0) {
+        setSelectedFeedback(response.data[0]);
+      }
     } catch (error) {
       console.error('Error fetching feedback details:', error);
       Swal.fire({
@@ -121,7 +126,12 @@ const FeedbackDetails = () => {
     setShowAllFeedbacks(false);
     try {
       const response = await axios.get(`${API_URL}/feedback`, { params: { email: searchEmail || '', name: searchName || '' } });
-      setSelectedFeedback(response.data);
+      console.log('Feedback fetched for suggestion:', response.data);
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        setSelectedFeedback(response.data[0]);
+      } else {
+        setSelectedFeedback(response.data);
+      }
     } catch (error) {
       console.error('Error fetching feedback details:', error);
       Swal.fire({
@@ -139,6 +149,7 @@ const FeedbackDetails = () => {
     setShowAllFeedbacks(false);
     try {
       const response = await axios.get(`${API_URL}/feedback/date-range`, { params: { startDate, endDate } });
+      console.log('Feedbacks fetched for date range:', response.data);
       setFeedbacks(response.data);
     } catch (error) {
       console.error('Error fetching feedbacks within date range:', error);
@@ -244,12 +255,14 @@ const FeedbackDetails = () => {
     XLSX.writeFile(workbook, 'selected-feedback-details.xlsx');
   };
 
-  // Pagination logic
   const indexOfLastFeedback = currentPage * feedbacksPerPage;
   const indexOfFirstFeedback = indexOfLastFeedback - feedbacksPerPage;
   const currentFeedbacks = feedbacks.slice(indexOfFirstFeedback, indexOfLastFeedback);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const clearSearchEmail = () => setSearchEmail('');
+  const clearSearchName = () => setSearchName('');
 
   return (
     <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-[rgba(255,255,255,0)] text-gray-900'} min-h-screen p-8 transition-all duration-300`}>
@@ -271,19 +284,34 @@ const FeedbackDetails = () => {
         {showEmailFilter && (
           <form onSubmit={handleSearchSubmit} className="mb-4">
             <label className="block text-sm font-medium text-white">Search by Email</label>
-            <div className="relative">
-              <div className='flex'>
-                <input
-                  type="text"
-                  value={searchEmail}
-                  onChange={handleSearchChange}
-                  placeholder="Enter email"
-                  className="mt-1 block w-5/12 rounded-lg p-2 border border-gray-300 bg-white text-black "
-                />
-                <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Search</button>
-              </div>
+            <div className="relative flex">
+            <div className="relative w-5/12 ">
+            <div>
+
+  <input
+    type="text"
+    value={searchEmail}
+    onChange={handleSearchChange}
+    placeholder="Enter email"
+    className="mt-1 block w-full rounded-lg p-2 border border-gray-300 bg-white text-black"
+  />
+  {searchEmail && (
+    <button
+      type="button"
+      onClick={clearSearchEmail}
+      className="absolute right-2 top-1/2 transform -translate-y-1/2  text-black px-2 py-1 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105"
+    >
+      X
+    </button>
+  )}
+            </div>
+</div>
+<button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">
+  Search
+</button>
+
               {suggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 mt-2 bg-white shadow-lg border border-gray-300">
+                <ul className="absolute left-0 top-10 right-0 mt-2 bg-white shadow-lg border border-gray-300">
                   {suggestions.map((suggestion, index) => (
                     <li
                       key={index}
@@ -302,31 +330,45 @@ const FeedbackDetails = () => {
         {showNameFilter && (
           <form onSubmit={handleSearchNameSubmit} className="mb-4">
             <label className="block text-sm font-medium text-white">Search by Name</label>
-            <div className="relative">
-              <div className='flex'>
-                <input
-                  type="text"
-                  value={searchName}
-                  onChange={handleSearchNameChange}
-                  placeholder="Enter first name + last name"
-                  className="mt-1 block w-5/12 rounded-lg p-2 border border-gray-300 bg-white text-black "
-                />
-                <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Search</button>
-              </div>
-              {suggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 mt-2 bg-white shadow-lg border border-gray-300">
-                  {suggestions.map((suggestion, index) => (
-                    <li
-                      key={index}
-                      className="p-2 cursor-pointer text-black hover:bg-gray-200"
-                      onClick={() => handleSuggestionClick(suggestion)}
-                    >
-                      {suggestion}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <div className="relative flex">
+  <div className="relative w-5/12 ">
+    <div>
+      <input
+        type="text"
+        value={searchName}
+        onChange={handleSearchNameChange}
+        placeholder="Enter first name + last name"
+        className="mt-1 block w-full rounded-lg p-2 border border-gray-300 bg-white text-black"
+      />
+      {searchName && (
+        <button
+          type="button"
+          onClick={clearSearchName}
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-black px-2 py-1 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105"
+        >
+          X
+        </button>
+      )}
+    </div>
+  </div>
+  <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">
+    Search
+  </button>
+  {suggestions.length > 0 && (
+    <ul className="absolute left-0 top-10 right-0 mt-2 bg-white shadow-lg border border-gray-300">
+      {suggestions.map((suggestion, index) => (
+        <li
+          key={index}
+          className="p-2 cursor-pointer text-black hover:bg-gray-200"
+          onClick={() => handleSuggestionClick(suggestion)}
+        >
+          {suggestion}
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
+
           </form>
         )}
 
@@ -410,16 +452,22 @@ const FeedbackDetails = () => {
           </table>
           {/* Pagination */}
           <nav className="flex justify-center mt-4">
-            <ul className="flex pl-0 rounded list-none flex-wrap">
-              {Array.from({ length: Math.ceil(feedbacks.length / feedbacksPerPage) }, (_, index) => (
-                <li key={index} className="relative block py-2 px-3 leading-tight bg-white border border-gray-300 text-blue-500 hover:bg-gray-200">
-                  <button onClick={() => paginate(index + 1)} className={`${currentPage === index + 1 ? 'bg-blue-500 text-white' : ''} relative block py-2 px-3 leading-tight bg-white border border-gray-300 text-blue-500 hover:bg-gray-200`}>
-                    {index + 1}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
+  <ul className="flex pl-0 rounded list-none flex-wrap">
+    {Array.from({ length: Math.ceil(feedbacks.length / feedbacksPerPage) }, (_, index) => (
+      <li key={index} className="relative block mx-1">
+        <button
+          onClick={() => paginate(index + 1)}
+          className={`${
+            currentPage === index + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 text-blue-500'
+          } relative block py-1 px-3 leading-tight rounded-full transition-colors duration-300 hover:bg-blue-400 hover:text-white`}
+        >
+          {index + 1}
+        </button>
+      </li>
+    ))}
+  </ul>
+</nav>
+
         </div>
 
         <div className="flex justify-end mb-4">
@@ -559,9 +607,6 @@ const FeedbackDetails = () => {
                   readOnly
                   className="mt-1 block w-full p-2 border border-gray-300 bg-white text-black"
                 />
-              </div>
-              <div className="flex justify-end mt-4">
-                <button onClick={exportAllToExcel} className="bg-green-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Export to Excel</button>
               </div>
             </motion.div>
           </div>

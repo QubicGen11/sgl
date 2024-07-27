@@ -13,6 +13,7 @@ const App = () => {
         <Route path="/" element={<Form />} />
         <Route path="/all" element={<FeedbackDetails />} />
         <Route path="/login" element={<AdminLogin />} />
+        
         <Route path="/admin" element={<ProtectedRoute component={Admin} />} />
       </Routes>
     </BrowserRouter>
