@@ -17,20 +17,77 @@ const Admin = () => {
   const [newPassword, setNewPassword] = useState('');
   const [currentPasswordVisible, setCurrentPasswordVisible] = useState(false);
   const [newPasswordVisible, setNewPasswordVisible] = useState(false);
+  const [defaultSettings, setDefaultSettings] = useState(null);
+  const [customQuestions, setCustomQuestions] = useState([]);
+  const [titleOptions, setTitleOptions] = useState([]); // New state for titleOptions
+  const [newsletterOptions, setNewsletterOptions] = useState([]); // New state for newsletterOptions
+  const [formData, setFormData] = useState({ customResponses: {} }); // Initialize formData with customResponses
+  const [errors, setErrors] = useState({}); // Initialize errors
+
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchLists = async () => {
       try {
-        const response = await axios.get('http://172.210.51.159:8083/api/lists');
-        setIndividualsList(response.data.individualsList);
-        setServicesList(response.data.servicesList);
+        const response = await axios.get('http://localhost:8083/api/lists');
+        const data = response.data || {}; // Fallback to an empty object if response.data is null
+        setIndividualsList(data.individualsList || []); // Default to an empty array if null
+        setServicesList(data.servicesList || []); // Default to an empty array if null
       } catch (error) {
         console.error('Error fetching lists:', error);
       }
     };
-
+  
     fetchLists();
+  }, []);
+  
+  useEffect(() => {
+    const fetchDefaultSettings = async () => {
+      try {
+        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+        if (!token) {
+          throw new Error('No token found');
+        }
+  
+        const response = await axios.get('http://localhost:8083/api/admin/form-defaults', {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the token in the request header
+          },
+        });
+        const data = response.data || {}; // Fallback to an empty object if response.data is null
+        setDefaultSettings({
+          email: data.email || '',
+          organizationName: data.organizationName || '',
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+          phoneNumber: data.phoneNumber || '',
+          feedbackQuestions: data.feedbackQuestions || [], // Default to an empty array if null
+          titleOptions: data.titleOptions || [], // Default to an empty array if null
+          newsletterOptions: data.newsletterOptions || [], // Default to an empty array if null
+        });
+        setCustomQuestions(data.feedbackQuestions || []); // Default to an empty array if null
+        setTitleOptions(data.titleOptions || []); // Set title options
+        setNewsletterOptions(data.newsletterOptions || []); // Set newsletter options
+        setFormData({
+          customResponses: (data.feedbackQuestions || []).reduce((acc, question) => {
+            acc[question] = '';
+            return acc;
+          }, {}),
+        });
+      } catch (error) {
+        console.error('Error fetching default settings:', error);
+        if (error.response && error.response.status === 403) {
+          Swal.fire({
+            title: 'Access Denied',
+            text: 'You do not have permission to access this resource.',
+            icon: 'error',
+            confirmButtonText: 'OK',
+          });
+        }
+      }
+    };
+  
+    fetchDefaultSettings();
   }, []);
 
   const handleMouseEnter = () => {
@@ -42,23 +99,70 @@ const Admin = () => {
   };
 
   const handleUpdateIndividualsList = async (updatedList) => {
-    try {
-      await axios.post('http://172.210.51.159:8083/api/lists/individuals', { updatedList });
-      setIndividualsList(updatedList);
-      setViewMode('view');
-    } catch (error) {
-      console.error('Error updating individuals list:', error);
-    }
+    setIndividualsList(updatedList);
   };
 
   const handleUpdateServicesList = async (updatedList) => {
+    setServicesList(updatedList);
+  };
+
+  const handleSubmitAllUpdates = async () => {
     try {
-      await axios.post('http://172.210.51.159:8083/api/lists/services', { updatedList });
-      setServicesList(updatedList);
-      setViewMode('view');
+      const token = localStorage.getItem('token');
+      await axios.all([
+        axios.post('http://localhost:8083/api/lists/individuals', { updatedList: individualsList }),
+        axios.post('http://localhost:8083/api/lists/services', { updatedList: servicesList }),
+        axios.post('http://localhost:8083/api/admin/form-defaults', { 
+          ...defaultSettings, 
+          feedbackQuestions: customQuestions, 
+          titleOptions, 
+          newsletterOptions 
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}` // Include the token in the request header
+          }
+        })
+      ]);
+      Swal.fire({
+        title: 'Success',
+        text: 'All updates saved successfully',
+        icon: 'success',
+        confirmButtonText: 'OK',
+      });
     } catch (error) {
-      console.error('Error updating services list:', error);
+      console.error('Error updating settings:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to save updates',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
     }
+  };
+
+  const handleAddQuestion = () => {
+    setCustomQuestions([...customQuestions, '']);
+  };
+
+  const handleUpdateQuestion = (index, value) => {
+    const updatedQuestions = [...customQuestions];
+    updatedQuestions[index] = value;
+    setCustomQuestions(updatedQuestions);
+  };
+
+  const handleDeleteQuestion = (index) => {
+    const updatedQuestions = customQuestions.filter((_, i) => i !== index);
+    setCustomQuestions(updatedQuestions);
+  };
+
+  const handleCustomResponseChange = (question, value) => {
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      customResponses: {
+        ...prevFormData.customResponses,
+        [question]: value,
+      },
+    }));
   };
 
   const handleLogout = () => {
@@ -71,7 +175,7 @@ const Admin = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://172.210.51.159:8083/api/admin/change-password',
+        'http://localhost:8083/api/admin/change-password',
         { currentPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -139,26 +243,11 @@ const Admin = () => {
             className="relative"
           >
             <button
-              className={`bg-blue-500 text-white px-4 py-2 rounded-md ${viewMode.includes('edit') ? 'bg-blue-700' : ''}`}
+              onClick={() => setViewMode('edit-form')}
+              className={`bg-blue-500 text-white px-4 py-2 rounded-md ${viewMode === 'edit-form' ? 'bg-blue-700' : ''}`}
             >
               Edit Form
             </button>
-            {dropdownOpen && (
-              <div className="absolute left-0 w-full mt-1 bg-white rounded-md shadow-lg z-10">
-                <button
-                  onClick={() => setViewMode('edit-individuals')}
-                  className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
-                >
-                  Edit Individuals
-                </button>
-                <button
-                  onClick={() => setViewMode('edit-services')}
-                  className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
-                >
-                  Edit Services
-                </button>
-              </div>
-            )}
           </div>
           <button
             onClick={() => setShowChangePassword(true)}
@@ -176,99 +265,251 @@ const Admin = () => {
 
         <div className="w-full max-w-4xl">
           {viewMode === 'view' && <FeedbackDetails />}
-          {viewMode === 'edit-individuals' && (
+          {viewMode === 'edit-form' && (
             <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
-              <div className="bg-white p-4 rounded shadow-md h-96 overflow-y-auto">
-                <h2 className="text-xl font-bold mb-4 text-black">Edit Individuals List</h2>
-                {individualsList.map((individual, index) => (
-                  <div key={index} className="flex items-center mb-2">
+              <div className="bg-white p-4 rounded shadow-md h-[60vh] w-[60vw] overflow-y-auto">
+                <h2 className="text-xl font-bold mb-4 text-black">Edit Form</h2>
+               
+                <div className="mb-8">
+              
+                  <div className="mb-4 w-64">
+                    <label className="block text-sm font-medium w-14 text-gray-700">Title</label>
+                    {titleOptions.map((option, index) => (
+                      <div key={index} className="flex items-center mb-2">
+                        <input
+                          type="text"
+                          
+                          value={option}
+                          onChange={(e) => {
+                            const updatedList = [...titleOptions];
+                            updatedList[index] = e.target.value;
+                            setTitleOptions(updatedList);
+                          }}
+                          className="flex-1 text-black mr-2 p-2 border border-gray-300 w-14 rounded"
+                        />
+                        <button
+                          onClick={() => {
+                            const updatedList = titleOptions.filter((_, i) => i !== index);
+                            setTitleOptions(updatedList);
+                          }}
+                          className="bg-red-500 text-white px-2 py-1 rounded"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => {
+                        setTitleOptions([...titleOptions, '']);
+                      }}
+                      className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+                    >
+                      Add Title Option
+                    </button>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">Email</label>
                     <input
                       type="text"
-                      value={individual}
-                      onChange={(e) => {
-                        const updatedList = [...individualsList];
-                        updatedList[index] = e.target.value;
-                        setIndividualsList(updatedList);
-                      }}
+                      value={defaultSettings?.email || ''}
+                      onChange={(e) => setDefaultSettings({ ...defaultSettings, email: e.target.value })}
                       className="flex-1 mr-2 p-2 text-black border border-gray-300 rounded"
                     />
-                    <button
-                      onClick={() => {
-                        const updatedList = individualsList.filter((_, i) => i !== index);
-                        setIndividualsList(updatedList);
-                      }}
-                      className="bg-red-500 text-white px-2 py-1 rounded"
-                    >
-                      Delete
-                    </button>
                   </div>
-                ))}
-                <button
-                  onClick={() => {
-                    setIndividualsList([...individualsList, '']);
-                  }}
-                  className="bg-green-500 text-white px-4 py-2 rounded mt-2"
-                >
-                  Add Individual
-                </button>
-                <div className="flex justify-end mt-4">
-                  <button
-                    onClick={() => handleUpdateIndividualsList(individualsList)}
-                    className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => setViewMode('view')}
-                    className="bg-gray-500 text-white px-4 py-2 rounded"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {viewMode === 'edit-services' && (
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
-              <div className="bg-white p-4 rounded shadow-md">
-                <h2 className="text-xl font-bold mb-4 text-black">Edit Services List</h2>
-                {servicesList.map((service, index) => (
-                  <div key={index} className="flex items-center mb-2">
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">Office Name</label>
                     <input
                       type="text"
-                      value={service}
-                      onChange={(e) => {
-                        const updatedList = [...servicesList];
-                        updatedList[index] = e.target.value;
-                        setServicesList(updatedList);
-                      }}
-                      className="flex-1 text-black mr-2 p-2 border border-gray-300 rounded"
+                      value={defaultSettings?.organizationName || ''}
+                      onChange={(e) => setDefaultSettings({ ...defaultSettings, organizationName: e.target.value })}
+                      className="flex-1 mr-2 p-2 text-black border border-gray-300 rounded"
                     />
+                  </div>
+                 
+                  {/* <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">Newsletter Options</label>
+                    {newsletterOptions.map((option, index) => (
+                      <div key={index} className="flex items-center mb-2">
+                        <input
+                          type="text"
+                          value={option}
+                          onChange={(e) => {
+                            const updatedList = [...newsletterOptions];
+                            updatedList[index] = e.target.value;
+                            setNewsletterOptions(updatedList);
+                          }}
+                          className="flex-1 text-black mr-2 p-2 border border-gray-300 rounded"
+                        />
+                        <button
+                          onClick={() => {
+                            const updatedList = newsletterOptions.filter((_, i) => i !== index);
+                            setNewsletterOptions(updatedList);
+                          }}
+                          className="bg-red-500 text-white px-2 py-1 rounded"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ))}
                     <button
                       onClick={() => {
-                        const updatedList = servicesList.filter((_, i) => i !== index);
-                        setServicesList(updatedList);
+                        setNewsletterOptions([...newsletterOptions, '']);
                       }}
-                      className="bg-red-500 text-white px-2 py-1 rounded"
+                      className="bg-green-500 text-white px-4 py-2 rounded mt-2"
                     >
-                      Delete
+                      Add Newsletter Option
                     </button>
+                  </div> */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">First Name</label>
+                    <input
+                      type="text"
+                      value={defaultSettings?.firstName || ''}
+                      onChange={(e) => setDefaultSettings({ ...defaultSettings, firstName: e.target.value })}
+                      className="flex-1 mr-2 p-2 text-black border border-gray-300 rounded"
+                    />
                   </div>
-                ))}
-                <button
-                  onClick={() => {
-                    setServicesList([...servicesList, '']);
-                  }}
-                  className="bg-green-500 text-white px-4 py-2 rounded mt-2"
-                >
-                  Add Service
-                </button>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                    <input
+                      type="text"
+                      value={defaultSettings?.lastName || ''}
+                      onChange={(e) => setDefaultSettings({ ...defaultSettings, lastName: e.target.value })}
+                      className="flex-1 mr-2 p-2 text-black border border-gray-300 rounded"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                    <input
+                      type="text"
+                      value={defaultSettings?.phoneNumber || ''}
+                      onChange={(e) => setDefaultSettings({ ...defaultSettings, phoneNumber: e.target.value })}
+                      className="flex-1 mr-2 p-2 text-black border border-gray-300 rounded"
+                    />
+                  </div>
+               
+                </div> <div className="mb-8 w-64">
+                  <h3 className="text-lg font-semibold text-black">Add Employee Name</h3>
+                  {individualsList.map((individual, index) => (
+                    <div key={index} className="flex items-center mb-2">
+                      <input
+                        type="text"
+                        value={individual}
+                        onChange={(e) => {
+                          const updatedList = [...individualsList];
+                          updatedList[index] = e.target.value;
+                          setIndividualsList(updatedList);
+                        }}
+                        className="flex-1 mr-2 p-2 text-black border border-gray-300 rounded"
+                      />
+                      <button
+                        onClick={() => {
+                          const updatedList = individualsList.filter((_, i) => i !== index);
+                          setIndividualsList(updatedList);
+                        }}
+                        className="bg-red-500 text-white px-2 py-1 rounded"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => {
+                      setIndividualsList([...individualsList, '']);
+                    }}
+                    className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+                  >
+                    Add Individual
+                  </button>
+                </div>
+                <div className="mb-8 w-64">
+                  <h3 className="text-lg font-semibold text-black">Add Services Name</h3>
+                  {servicesList.map((service, index) => (
+                    <div key={index} className="flex items-center mb-2">
+                      <input
+                        type="text"
+                        value={service}
+                        onChange={(e) => {
+                          const updatedList = [...servicesList];
+                          updatedList[index] = e.target.value;
+                          setServicesList(updatedList);
+                        }}
+                        className="flex-1 text-black mr-2 p-2 border border-gray-300 rounded"
+                      />
+                      <button
+                        onClick={() => {
+                          const updatedList = servicesList.filter((_, i) => i !== index);
+                          setServicesList(updatedList);
+                        }}
+                        className="bg-red-500 text-white px-2 py-1 rounded"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => {
+                      setServicesList([...servicesList, '']);
+                    }}
+                    className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+                  >
+                    Add Service
+                  </button>
+                </div>
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold text-black">Edit Test Questions</h3>
+                  {defaultSettings?.feedbackQuestions?.map((question, index) => (
+                    <div key={index} className="mb-4">
+                      <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {question} <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.customResponses?.[question] || ''}
+                        onChange={(e) => handleCustomResponseChange(question, e.target.value)}
+                        className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+                        required
+                      />
+                      {errors[`customResponse-${question}`] && (
+                        <p className="text-red-500 text-sm">
+                          {errors[`customResponse-${question}`]}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold text-black">Edit Custom Questions</h3>
+                  {customQuestions.map((question, index) => (
+                    <div key={index} className="flex items-center mb-2">
+                      <input
+                        type="text"
+                        value={question}
+                        onChange={(e) => handleUpdateQuestion(index, e.target.value)}
+                        className="flex-1 mr-2 p-2 text-black border border-gray-300 rounded"
+                      />
+                      <button
+                        onClick={() => handleDeleteQuestion(index)}
+                        className="bg-red-500 text-white px-2 py-1 rounded"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={handleAddQuestion}
+                    className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+                  >
+                    Add Question
+                  </button>
+                </div>
                 <div className="flex justify-end mt-4">
                   <button
-                    onClick={() => handleUpdateServicesList(servicesList)}
+                    onClick={handleSubmitAllUpdates}
                     className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
                   >
-                    Save
+                    Save All
                   </button>
                   <button
                     onClick={() => setViewMode('view')}

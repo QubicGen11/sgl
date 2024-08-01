@@ -12,7 +12,7 @@ const AdminLogin = () => {
     e.preventDefault();
     try {
       console.log('Sending request with:', { email, password });
-      const response = await axios.post('http://172.210.51.159:8083/api/admin/login', { email, password });
+      const response = await axios.post('http://localhost:8083/api/admin/login', { email, password });
       console.log('Response:', response);
       localStorage.setItem('token', response.data.token);
       navigate('/admin');
@@ -38,6 +38,7 @@ const AdminLogin = () => {
           <h2 className="text-2xl mb-4">Admin Login</h2>
           {error && <p className="text-red-500">{error}</p>}
           <div className="mb-4">
+            
             <label>Email</label>
             <input
               type="email"

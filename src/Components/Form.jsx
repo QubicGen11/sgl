@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import axios from 'axios';
@@ -6,8 +6,9 @@ import { motion } from 'framer-motion';
 
 const Form = () => {
   const initialFormData = {
+    title: '', // New field for Mr./Mrs.
     email: '',
-    organizationName: '',
+    organizationName: '', // New field for Organization Name
     firstName: '',
     lastName: '',
     phoneNumber: '',
@@ -17,7 +18,10 @@ const Form = () => {
     responseTime: {},
     overallServices: {},
     feedback: '',
-    recommend: ''
+    recommend: '',
+    subscribeNewsletter: 'Yes', // New field for subscribe to newsletter
+    termsAccepted: false, // New field for terms and conditions
+    customResponses: {} // Store responses to custom questions
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -25,26 +29,62 @@ const Form = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const formRef = useRef(null);
-
-  const [individualsList, setIndividualsList] = useState([]);
-  const [servicesList, setServicesList] = useState([]);
+  const [defaultSettings, setDefaultSettings] = useState({
+    titleOptions: [],
+    feedbackQuestions: [],
+  });
 
   useEffect(() => {
-    // Fetch individualsList and servicesList from the backend
+    const fetchDefaults = async () => {
+      try {
+        const response = await axios.get('http://localhost:8083/api/admin/form-defaults', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const data = response.data || {}; // Fallback to an empty object if response.data is null
+        setDefaultSettings({
+          titleOptions: data.titleOptions || [], // Default to an empty array if null
+          feedbackQuestions: data.feedbackQuestions || [], // Default to an empty array if null
+        });
+        setFormData((prev) => ({
+          ...prev,
+          title: data.titleOptions && data.titleOptions.length > 0 ? data.titleOptions[0] : '',
+          email: data.email || '',
+          organizationName: data.organizationName || '',
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+          phoneNumber: data.phoneNumber || '',
+        }));
+      } catch (error) {
+        console.error('Error fetching default settings:', error);
+      }
+    };
+  
+    fetchDefaults();
+  }, []);
+  
+  useEffect(() => {
     const fetchLists = async () => {
       try {
-        const response = await axios.get('http://172.210.51.159:8083/api/lists');
-        setIndividualsList(response.data.individualsList);
-        setServicesList(response.data.servicesList);
+        const response = await axios.get('http://localhost:8083/api/lists');
+        const data = response.data || {}; // Fallback to an empty object if response.data is null
+        console.log('Fetched Lists:', data); // Log the response data
+        setFormData((prev) => ({
+          ...prev,
+          individuals: data.individualsList || [], // Default to an empty array if null
+          services: data.servicesList || [], // Default to an empty array if null
+        }));
       } catch (error) {
         console.error('Error fetching lists:', error);
       }
     };
-
+  
     fetchLists();
   }, []);
-
+  
+  
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -81,12 +121,31 @@ const Form = () => {
     }));
   };
 
+  const handleCustomResponseChange = (question, value) => {
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      customResponses: {
+        ...prevFormData.customResponses,
+        [question]: value
+      }
+    }));
+  };
+
+  const handleTermsChange = (e) => {
+    setFormData({
+      ...formData,
+      termsAccepted: e.target.checked
+    });
+  };
+
   const validateForm = () => {
     const newErrors = {};
+    if (!formData.title) newErrors.title = 'Title is required';
     if (!formData.email) newErrors.email = 'Email is required';
     if (!formData.firstName) newErrors.firstName = 'First Name is required';
     if (!formData.lastName) newErrors.lastName = 'Last Name is required';
     if (!formData.phoneNumber) newErrors.phoneNumber = 'Phone number is required';
+    if (!formData.organizationName) newErrors.organizationName = 'Organization Name is required';
     if (formData.services.length === 0) newErrors.services = 'At least one service must be selected';
     if (formData.individuals.length === 0) newErrors.individuals = 'At least one individual must be selected';
     formData.individuals.forEach(individual => {
@@ -102,6 +161,7 @@ const Form = () => {
     });
     if (!formData.feedback) newErrors.feedback = 'Feedback is required';
     if (!formData.recommend) newErrors.recommend = 'Recommendation is required';
+    if (!formData.termsAccepted) newErrors.termsAccepted = 'You must accept the terms and conditions';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -119,7 +179,7 @@ const Form = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.post('http://172.210.51.159:8083/api/feedback', formData, {
+      const response = await axios.post('http://localhost:8083/api/feedback', formData, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -134,8 +194,7 @@ const Form = () => {
         }).then(async () => {
           setFormData(initialFormData);
           setLoading(false);
-          // Send email
-          await axios.post('http://172.210.51.159:8083/api/mail/send-email', formData, {
+          await axios.post('http://localhost:8083/api/mail/send-email', formData, {
             headers: {
               'Content-Type': 'application/json',
             },
@@ -189,29 +248,25 @@ const Form = () => {
         
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email <span className="text-red-500">*</span></label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Title <span className="text-red-500">*</span></label>
+            <select
+              name="title"
+              value={formData.title}
               onChange={handleChange}
               className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
               required
-            />
-            {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-          </div>
-          
-          <div className="mb-4">
-            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Phone number <span className="text-red-500">*</span></label>
-            <input
-              type="text"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
-              required
-            />
-            {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
+            >
+              {Array.isArray(defaultSettings?.titleOptions) && defaultSettings.titleOptions.length > 0 ? (
+                defaultSettings.titleOptions.map((option, index) => (
+                  <option key={index} value={option}>
+                    {option}
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>No options available</option>
+              )}
+            </select>
+            {errors.title && <p className="text-red-500 text-sm">{errors.title}</p>}
           </div>
 
           <div className="mb-4">
@@ -241,9 +296,48 @@ const Form = () => {
           </div>
 
           <div className="mb-4">
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email <span className="text-red-500">*</span></label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+              required
+            />
+            {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+          </div>
+          
+          <div className="mb-4">
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Phone number <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+              required
+            />
+            {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
+          </div>
+
+          <div className="mb-4">
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Office Name <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              name="organizationName"
+              value={formData.organizationName}
+              onChange={handleChange}
+              className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+              required
+            />
+            {errors.organizationName && <p className="text-red-500 text-sm">{errors.organizationName}</p>}
+          </div>
+
+          <div className="mb-4">
             <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Please select one of the following services provided by Somireddy Law Group that you have received. <span className="text-red-500">*</span></label>
             <div className="mt-2">
-              {servicesList.map((service) => (
+              {formData.services.map((service) => (
                 <div key={service} className="flex items-center">
                   <input
                     type="checkbox"
@@ -261,7 +355,7 @@ const Form = () => {
           </div>
 
           <div className="mb-4">
-            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Select the names of the individuals who worked on your cases <span className="text-red-500">*</span></label>
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Select the names of the Employees who worked on your cases <span className="text-red-500">*</span></label>
             <div className="relative">
               <button
                 type="button"
@@ -276,7 +370,7 @@ const Form = () => {
               {dropdownOpen && (
                 <div className={`absolute mt-1 w-full h-36 overflow-y-auto rounded-md shadow-lg ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
                   <div className="py-1">
-                    {individualsList.map((individual) => (
+                    {formData.individuals.map((individual) => (
                       <div key={individual} className="flex items-center px-4 py-2">
                         <input
                           type="checkbox"
@@ -366,6 +460,23 @@ const Form = () => {
             </div>
           ))}
 
+          {/* Render custom feedback questions */}
+          {defaultSettings?.feedbackQuestions?.map((question, index) => (
+            <div key={index} className="mb-4">
+              <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                {question} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.customResponses[question] || ''}
+                onChange={(e) => handleCustomResponseChange(question, e.target.value)}
+                className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+                required
+              />
+              {errors[`customResponse-${question}`] && <p className="text-red-500 text-sm">{errors[`customResponse-${question}`]}</p>}
+            </div>
+          ))}
+
           <div className="mb-4">
             <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Please provide any feedback that would be helpful for us to improve our services <span className="text-red-500">*</span></label>
             <textarea
@@ -397,6 +508,44 @@ const Form = () => {
               ))}
             </div>
             {errors.recommend && <p className="text-red-500 text-sm">{errors.recommend}</p>}
+          </div>
+
+          <div className="mb-4">
+            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Would you like to subscribe to our newsletter? <span className="text-red-500">*</span></label>
+            <div className="flex justify-between mt-2">
+              {['Yes', 'No'].map((option) => (
+                <div key={option} className="flex items-center">
+                  <input
+                    type="radio"
+                    name="subscribeNewsletter"
+                    value={option}
+                    checked={formData.subscribeNewsletter === option}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-indigo-600 border-gray-300"
+                    required
+                  />
+                  <label className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{option}</label>
+                </div>
+              ))}
+            </div>
+            {errors.subscribeNewsletter && <p className="text-red-500 text-sm">{errors.subscribeNewsletter}</p>}
+          </div>
+
+          <div className="mb-4">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                name="termsAccepted"
+                checked={formData.termsAccepted}
+                onChange={handleTermsChange}
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                required
+              />
+              <label className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                I accept the terms and conditions
+              </label>
+            </div>
+            {errors.termsAccepted && <p className="text-red-500 text-sm">{errors.termsAccepted}</p>}
           </div>
 
           <div className="flex justify-end">
