@@ -6,8 +6,8 @@ import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
 import { motion } from 'framer-motion';
+import StarRatings from 'react-star-ratings';
 
-// const API_URL = 'http://localhost:8083/api';
 const API_URL = 'http://localhost:8083/api';
 
 const FeedbackDetails = () => {
@@ -546,50 +546,29 @@ const FeedbackDetails = () => {
                 <div key={index} className="mb-4">
                   <h4 className="text-lg font-semibold mb-2">{individual}</h4>
                   <label className="block text-sm font-medium text-gray-700">Professionalism Rating</label>
-                  <div className="flex justify-between mt-2">
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <div key={rating} className="flex items-center">
-                        <input
-                          type="radio"
-                          value={rating}
-                          checked={selectedFeedback.professionalism[individual] === String(rating)}
-                          readOnly
-                          className="h-4 w-4 text-indigo-600 border-gray-300"
-                        />
-                        <label className="ml-2 text-sm text-gray-700">{rating}</label>
-                      </div>
-                    ))}
-                  </div>
+                  <StarRatings
+                    rating={parseInt(selectedFeedback.professionalism[individual]) || 0}
+                    starRatedColor="gold"
+                    numberOfStars={5}
+                    starDimension="24px"
+                    starSpacing="2px"
+                  />
                   <label className="block text-sm font-medium text-gray-700">Response Time Rating</label>
-                  <div className="flex justify-between mt-2">
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <div key={rating} className="flex items-center">
-                        <input
-                          type="radio"
-                          value={rating}
-                          checked={selectedFeedback.responseTime[individual] === String(rating)}
-                          readOnly
-                          className="h-4 w-4 text-indigo-600 border-gray-300"
-                        />
-                        <label className="ml-2 text-sm text-gray-700">{rating}</label>
-                      </div>
-                    ))}
-                  </div>
+                  <StarRatings
+                    rating={parseInt(selectedFeedback.responseTime[individual]) || 0}
+                    starRatedColor="gold"
+                    numberOfStars={5}
+                    starDimension="24px"
+                    starSpacing="2px"
+                  />
                   <label className="block text-sm font-medium text-gray-700">Overall Services Rating</label>
-                  <div className="flex justify-between mt-2">
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <div key={rating} className="flex items-center">
-                        <input
-                          type="radio"
-                          value={rating}
-                          checked={selectedFeedback.overallServices[individual] === String(rating)}
-                          readOnly
-                          className="h-4 w-4 text-indigo-600 border-gray-300"
-                        />
-                        <label className="ml-2 text-sm text-gray-700">{rating}</label>
-                      </div>
-                    ))}
-                  </div>
+                  <StarRatings
+                    rating={parseInt(selectedFeedback.overallServices[individual]) || 0}
+                    starRatedColor="gold"
+                    numberOfStars={5}
+                    starDimension="24px"
+                    starSpacing="2px"
+                  />
                 </div>
               ))}
               <div className="mb-4">

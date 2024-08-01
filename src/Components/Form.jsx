@@ -3,12 +3,13 @@ import { FaMoon, FaSun } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import StarRatings from 'react-star-ratings';
 
 const Form = () => {
   const initialFormData = {
-    title: '', // New field for Mr./Mrs.
+    title: '',
     email: '',
-    organizationName: '', // New field for Organization Name
+    organizationName: '',
     firstName: '',
     lastName: '',
     phoneNumber: '',
@@ -17,11 +18,11 @@ const Form = () => {
     professionalism: {},
     responseTime: {},
     overallServices: {},
-    feedback: '',
+    feedbacks: {}, // Store feedback for each individual
     recommend: '',
-    subscribeNewsletter: 'Yes', // New field for subscribe to newsletter
-    termsAccepted: false, // New field for terms and conditions
-    customResponses: {} // Store responses to custom questions
+    subscribeNewsletter: '',
+    termsAccepted: false,
+    customResponses: {}
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -42,10 +43,10 @@ const Form = () => {
             Authorization: `Bearer ${localStorage.getItem('token')}`
           }
         });
-        const data = response.data || {}; // Fallback to an empty object if response.data is null
+        const data = response.data || {};
         setDefaultSettings({
-          titleOptions: data.titleOptions || [], // Default to an empty array if null
-          feedbackQuestions: data.feedbackQuestions || [], // Default to an empty array if null
+          titleOptions: data.titleOptions || [],
+          feedbackQuestions: data.feedbackQuestions || [],
         });
         setFormData((prev) => ({
           ...prev,
@@ -60,31 +61,28 @@ const Form = () => {
         console.error('Error fetching default settings:', error);
       }
     };
-  
+
     fetchDefaults();
   }, []);
-  
+
   useEffect(() => {
     const fetchLists = async () => {
       try {
         const response = await axios.get('http://localhost:8083/api/lists');
-        const data = response.data || {}; // Fallback to an empty object if response.data is null
-        console.log('Fetched Lists:', data); // Log the response data
+        const data = response.data || {};
         setFormData((prev) => ({
           ...prev,
-          individuals: data.individualsList || [], // Default to an empty array if null
-          services: data.servicesList || [], // Default to an empty array if null
+          individuals: data.individualsList.map(ind => `${ind.name} (${ind.designation})`) || [], // Including designation in the individual name
+          services: data.servicesList || [],
         }));
       } catch (error) {
         console.error('Error fetching lists:', error);
       }
     };
-  
+
     fetchLists();
   }, []);
-  
-  
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -110,13 +108,12 @@ const Form = () => {
     });
   };
 
-  const handleRatingChange = (e, individual, field) => {
-    const { value } = e.target;
+  const handleRatingChange = (newRating, name, field) => {
     setFormData((prevFormData) => ({
       ...prevFormData,
       [field]: {
         ...prevFormData[field],
-        [individual]: value
+        [name]: newRating
       }
     }));
   };
@@ -138,8 +135,21 @@ const Form = () => {
     });
   };
 
+  const handleFeedbackChange = (e, individual) => {
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      feedbacks: {
+        ...prevFormData.feedbacks,
+        [individual]: e.target.value
+      }
+    }));
+  };
+
   const validateForm = () => {
     const newErrors = {};
+  
+    console.log('Form Data:', formData); // Log the entire formData object
+  
     if (!formData.title) newErrors.title = 'Title is required';
     if (!formData.email) newErrors.email = 'Email is required';
     if (!formData.firstName) newErrors.firstName = 'First Name is required';
@@ -148,7 +158,11 @@ const Form = () => {
     if (!formData.organizationName) newErrors.organizationName = 'Organization Name is required';
     if (formData.services.length === 0) newErrors.services = 'At least one service must be selected';
     if (formData.individuals.length === 0) newErrors.individuals = 'At least one individual must be selected';
+  
+    console.log('Errors after basic checks:', newErrors); // Log errors after basic checks
+  
     formData.individuals.forEach(individual => {
+      console.log('Checking individual:', individual); // Log the individual being checked
       if (!formData.professionalism[individual]) {
         newErrors[`professionalism-${individual}`] = `Professionalism rating for ${individual} is required`;
       }
@@ -158,16 +172,37 @@ const Form = () => {
       if (!formData.overallServices[individual]) {
         newErrors[`overallServices-${individual}`] = `Overall services rating for ${individual} is required`;
       }
+      if (!formData.feedbacks[individual]) {
+        newErrors[`feedback-${individual}`] = `Feedback for ${individual} is required`;
+      }
     });
-    if (!formData.feedback) newErrors.feedback = 'Feedback is required';
+  
     if (!formData.recommend) newErrors.recommend = 'Recommendation is required';
     if (!formData.termsAccepted) newErrors.termsAccepted = 'You must accept the terms and conditions';
+  
+    console.log('Final Errors:', newErrors); // Log final errors
+  
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+  
+    // Consolidate feedbacks into a single field if needed
+    const consolidatedFeedback = Object.entries(formData.feedbacks)
+      .map(([individual, feedback]) => `${individual}: ${feedback}`)
+      .join(' | ');
+  
+    const submissionData = {
+      ...formData,
+      feedback: consolidatedFeedback, // Add the consolidated feedback to the data
+      professionalism: formData.professionalism, // These should already be numbers
+      responseTime: formData.responseTime, // These should already be numbers
+      overallServices: formData.overallServices, // These should already be numbers
+    };
+  
     if (!validateForm()) {
       Swal.fire({
         title: 'Error',
@@ -177,14 +212,16 @@ const Form = () => {
       });
       return;
     }
+  
     setLoading(true);
+  
     try {
-      const response = await axios.post('http://localhost:8083/api/feedback', formData, {
+      const response = await axios.post('http://localhost:8083/api/feedback', submissionData, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
-
+  
       if (response.status === 200 || response.status === 201) {
         Swal.fire({
           title: 'Success!',
@@ -194,7 +231,7 @@ const Form = () => {
         }).then(async () => {
           setFormData(initialFormData);
           setLoading(false);
-          await axios.post('http://localhost:8083/api/mail/send-email', formData, {
+          await axios.post('http://localhost:8083/api/mail/send-email', submissionData, {
             headers: {
               'Content-Type': 'application/json',
             },
@@ -220,6 +257,8 @@ const Form = () => {
       setLoading(false);
     }
   };
+  
+  
 
   return (
     <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} min-h-screen p-8 transition-all duration-300`}>
@@ -397,65 +436,59 @@ const Form = () => {
 
               <div className="mb-4">
                 <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>On a scale of 1-5, how would you rate {individual}'s professionalism? <span className="text-red-500">*</span></label>
-                <div className="flex justify-between mt-2">
-                  {[1, 2, 3, 4, 5].map((rating) => (
-                    <div key={rating} className="flex items-center">
-                      <input
-                        type="radio"
-                        name={`professionalism-${individual}`}
-                        value={rating}
-                        checked={formData.professionalism[individual] === String(rating)}
-                        onChange={(e) => handleRatingChange(e, individual, 'professionalism')}
-                        className="h-4 w-4 text-indigo-600 border-gray-300"
-                        required
-                      />
-                      <label className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{rating}</label>
-                    </div>
-                  ))}
-                </div>
+                <StarRatings
+                  rating={formData.professionalism[individual] || 0}
+                  starRatedColor="gold"
+                  starHoverColor="gold"
+                  changeRating={(newRating) => handleRatingChange(newRating, individual, 'professionalism')}
+                  numberOfStars={5}
+                  name={`professionalism-${individual}`}
+                  starDimension="24px"
+                  starSpacing="2px"
+                />
                 {errors[`professionalism-${individual}`] && <p className="text-red-500 text-sm">{errors[`professionalism-${individual}`]}</p>}
               </div>
 
               <div className="mb-4">
                 <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>On a scale of 1-5, how would you rate {individual}'s response time? <span className="text-red-500">*</span></label>
-                <div className="flex justify-between mt-2">
-                  {[1, 2, 3, 4, 5].map((rating) => (
-                    <div key={rating} className="flex items-center">
-                      <input
-                        type="radio"
-                        name={`responseTime-${individual}`}
-                        value={rating}
-                        checked={formData.responseTime[individual] === String(rating)}
-                        onChange={(e) => handleRatingChange(e, individual, 'responseTime')}
-                        className="h-4 w-4 text-indigo-600 border-gray-300"
-                        required
-                      />
-                      <label className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{rating}</label>
-                    </div>
-                  ))}
-                </div>
+                <StarRatings
+                  rating={formData.responseTime[individual] || 0}
+                  starRatedColor="gold"
+                  starHoverColor="gold"
+                  changeRating={(newRating) => handleRatingChange(newRating, individual, 'responseTime')}
+                  numberOfStars={5}
+                  name={`responseTime-${individual}`}
+                  starDimension="24px"
+                  starSpacing="2px"
+                />
                 {errors[`responseTime-${individual}`] && <p className="text-red-500 text-sm">{errors[`responseTime-${individual}`]}</p>}
               </div>
 
               <div className="mb-4">
                 <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>On a scale of 1-5, how would you rate the overall services of {individual}? <span className="text-red-500">*</span></label>
-                <div className="flex justify-between mt-2">
-                  {[1, 2, 3, 4, 5].map((rating) => (
-                    <div key={rating} className="flex items-center">
-                      <input
-                        type="radio"
-                        name={`overallServices-${individual}`}
-                        value={rating}
-                        checked={formData.overallServices[individual] === String(rating)}
-                        onChange={(e) => handleRatingChange(e, individual, 'overallServices')}
-                        className="h-4 w-4 text-indigo-600 border-gray-300"
-                        required
-                      />
-                      <label className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{rating}</label>
-                    </div>
-                  ))}
-                </div>
+                <StarRatings
+                  rating={formData.overallServices[individual] || 0}
+                  starRatedColor="gold"
+                  starHoverColor="gold"
+                  changeRating={(newRating) => handleRatingChange(newRating, individual, 'overallServices')}
+                  numberOfStars={5}
+                  name={`overallServices-${individual}`}
+                  starDimension="24px"
+                  starSpacing="2px"
+                />
                 {errors[`overallServices-${individual}`] && <p className="text-red-500 text-sm">{errors[`overallServices-${individual}`]}</p>}
+              </div>
+
+              <div className="mb-4">
+                <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Please provide any feedback that would be helpful for us to improve our services <span className="text-red-500">*</span></label>
+                <textarea
+                  name={`feedback-${individual}`}
+                  value={formData.feedbacks[individual] || ''}
+                  onChange={(e) => handleFeedbackChange(e, individual)}
+                  className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
+                  required
+                />
+                {errors[`feedback-${individual}`] && <p className="text-red-500 text-sm">{errors[`feedback-${individual}`]}</p>}
               </div>
             </div>
           ))}
@@ -476,18 +509,6 @@ const Form = () => {
               {errors[`customResponse-${question}`] && <p className="text-red-500 text-sm">{errors[`customResponse-${question}`]}</p>}
             </div>
           ))}
-
-          <div className="mb-4">
-            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Please provide any feedback that would be helpful for us to improve our services <span className="text-red-500">*</span></label>
-            <textarea
-              name="feedback"
-              value={formData.feedback}
-              onChange={handleChange}
-              className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
-              required
-            />
-            {errors.feedback && <p className="text-red-500 text-sm">{errors.feedback}</p>}
-          </div>
 
           <div className="mb-4">
             <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Would you recommend our services to your friends and family? <span className="text-red-500">*</span></label>
