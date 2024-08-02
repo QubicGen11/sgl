@@ -197,10 +197,10 @@ const Form = () => {
   
     const submissionData = {
       ...formData,
-      feedback: consolidatedFeedback, // Add the consolidated feedback to the data
-      professionalism: formData.professionalism, // These should already be numbers
-      responseTime: formData.responseTime, // These should already be numbers
-      overallServices: formData.overallServices, // These should already be numbers
+      feedback: consolidatedFeedback,
+      professionalism: formData.professionalism,
+      responseTime: formData.responseTime,
+      overallServices: formData.overallServices,
     };
   
     if (!validateForm()) {
@@ -216,35 +216,33 @@ const Form = () => {
     setLoading(true);
   
     try {
-      const response = await axios.post('http://localhost:8083/api/feedback', submissionData, {
+      const formSubmitPromise = axios.post('http://localhost:8083/api/feedback', submissionData, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
   
-      if (response.status === 200 || response.status === 201) {
+      const emailSendPromise = axios.post('http://localhost:8083/api/mail/send-email', submissionData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      // Use Promise.all to send both the form data and email concurrently
+      const [formSubmitResponse] = await Promise.all([formSubmitPromise, emailSendPromise]);
+  
+      if (formSubmitResponse.status === 200 || formSubmitResponse.status === 201) {
         Swal.fire({
           title: 'Success!',
           text: 'Form data saved!',
           icon: 'success',
           confirmButtonText: 'OK'
-        }).then(async () => {
+        }).then(() => {
           setFormData(initialFormData);
           setLoading(false);
-          await axios.post('http://localhost:8083/api/mail/send-email', submissionData, {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
         });
       } else {
-        Swal.fire({
-          title: 'Error',
-          text: 'Failed to save form data',
-          icon: 'error',
-          confirmButtonText: 'OK'
-        });
-        setLoading(false);
+        throw new Error('Failed to save form data');
       }
     } catch (error) {
       console.error(error);
@@ -257,6 +255,7 @@ const Form = () => {
       setLoading(false);
     }
   };
+  
   
   
 

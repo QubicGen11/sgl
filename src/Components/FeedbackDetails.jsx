@@ -13,6 +13,7 @@ const API_URL = 'http://localhost:8083/api';
 const FeedbackDetails = () => {
   const [searchEmail, setSearchEmail] = useState('');
   const [searchName, setSearchName] = useState('');
+  const [searchOrganization, setSearchOrganization] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
@@ -23,6 +24,7 @@ const FeedbackDetails = () => {
   const [showEmailFilter, setShowEmailFilter] = useState(true);
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [showNameFilter, setShowNameFilter] = useState(false);
+  const [showOrganizationFilter, setShowOrganizationFilter] = useState(false);
   const [showAllFeedbacks, setShowAllFeedbacks] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
@@ -44,34 +46,43 @@ const FeedbackDetails = () => {
   useEffect(() => {
     const fetchSuggestions = async () => {
       try {
+        let response;
         if (searchEmail) {
-          const response = await axios.get(`${API_URL}/feedback/suggestions`, { params: { email: searchEmail } });
-          console.log('Email suggestions fetched:', response.data);
-          setSuggestions(response.data);
+          response = await axios.get(`${API_URL}/feedback/suggestions`, { params: { email: searchEmail } });
         } else if (searchName) {
-          const response = await axios.get(`${API_URL}/feedback/suggestions`, { params: { name: searchName } });
-          console.log('Name suggestions fetched:', response.data);
-          setSuggestions(response.data);
+          response = await axios.get(`${API_URL}/feedback/suggestions`, { params: { name: searchName } });
+        } else if (searchOrganization) {
+          response = await axios.get(`${API_URL}/feedback/suggestions`, { params: { organizationName: searchOrganization } });
         } else {
           setSuggestions([]);
+          return;
         }
+        console.log('Suggestions fetched:', response.data);
+        setSuggestions(response.data);
       } catch (error) {
         console.error('Error fetching suggestions:', error);
       }
     };
 
     fetchSuggestions();
-  }, [searchEmail, searchName]);
+  }, [searchEmail, searchName, searchOrganization]);
 
   const handleSearchChange = (e) => {
     setSearchEmail(e.target.value);
     setSearchName('');
+    setSearchOrganization('');
   };
 
   const handleSearchNameChange = (e) => {
     setSearchName(e.target.value);
     setSearchEmail('');
-    console.log('Search name changed:', e.target.value);
+    setSearchOrganization('');
+  };
+
+  const handleSearchOrganizationChange = (e) => {
+    setSearchOrganization(e.target.value);
+    setSearchEmail('');
+    setSearchName('');
   };
 
   const handleSearchSubmit = async (e) => {
@@ -115,18 +126,47 @@ const FeedbackDetails = () => {
     }
   };
 
-  const handleSuggestionClick = async (suggestion) => {
-    if (searchEmail) {
-      setSearchEmail(suggestion);
-    } else if (searchName) {
-      setSearchName(suggestion);
-    }
-    setSuggestions([]);
+  const handleSearchOrganizationSubmit = async (e) => {
+    e.preventDefault();
     setSelectedFeedback(null);
     setShortView(true);
     setShowAllFeedbacks(false);
     try {
-      const response = await axios.get(`${API_URL}/feedback`, { params: { email: searchEmail || '', name: searchName || '' } });
+      const response = await axios.get(`${API_URL}/feedback`, { params: { organizationName: searchOrganization } });
+      console.log('Feedback fetched for organization:', response.data);
+      setFeedbacks(response.data);
+    } catch (error) {
+      console.error('Error fetching feedback details:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to fetch feedback details',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+    }
+  };
+
+  const handleSuggestionClick = async (suggestion) => {
+    let params = {};
+  
+    if (searchEmail) {
+      setSearchEmail(suggestion);
+      params = { email: suggestion };
+    } else if (searchName) {
+      setSearchName(suggestion);
+      params = { name: suggestion };
+    } else if (searchOrganization) {
+      setSearchOrganization(suggestion);
+      params = { organizationName: suggestion };
+    }
+  
+    setSuggestions([]);
+    setSelectedFeedback(null);
+    setShortView(true);
+    setShowAllFeedbacks(false);
+  
+    try {
+      const response = await axios.get(`${API_URL}/feedback`, { params });
       console.log('Feedback fetched for suggestion:', response.data);
       if (Array.isArray(response.data) && response.data.length > 0) {
         setSelectedFeedback(response.data[0]);
@@ -143,6 +183,7 @@ const FeedbackDetails = () => {
       });
     }
   };
+  
 
   const handleDateFilterSubmit = async (e) => {
     e.preventDefault();
@@ -172,14 +213,22 @@ const FeedbackDetails = () => {
       setShowEmailFilter(!showEmailFilter);
       setShowDateFilter(false);
       setShowNameFilter(false);
+      setShowOrganizationFilter(false);
     } else if (filterType === 'date') {
       setShowDateFilter(!showDateFilter);
       setShowEmailFilter(false);
       setShowNameFilter(false);
+      setShowOrganizationFilter(false);
     } else if (filterType === 'name') {
       setShowNameFilter(!showNameFilter);
       setShowEmailFilter(false);
       setShowDateFilter(false);
+      setShowOrganizationFilter(false);
+    } else if (filterType === 'organization') {
+      setShowOrganizationFilter(!showOrganizationFilter);
+      setShowEmailFilter(false);
+      setShowDateFilter(false);
+      setShowNameFilter(false);
     }
   };
 
@@ -219,6 +268,7 @@ const FeedbackDetails = () => {
       feedback.firstName,
       feedback.lastName,
       feedback.phoneNumber,
+      feedback.organizationName,
       feedback.services ? feedback.services.join(', ') : '',
       feedback.individuals ? feedback.individuals.join(', ') : '',
       formatRatings(feedback.professionalism),
@@ -229,7 +279,7 @@ const FeedbackDetails = () => {
     ]));
     doc.autoTable({
       startY: 20,
-      head: [['Email', 'First Name', 'Last Name', 'Phone Number', 'Services', 'Individuals', 'Professionalism Ratings', 'Response Time Ratings', 'Overall Services Ratings', 'Feedback', 'Recommend']],
+      head: [['Email', 'First Name', 'Last Name', 'Phone Number', 'Organization', 'Services', 'Individuals', 'Professionalism Ratings', 'Response Time Ratings', 'Overall Services Ratings', 'Feedback', 'Recommend']],
       body: tableData,
     });
     doc.save('selected-feedback-details.pdf');
@@ -242,6 +292,7 @@ const FeedbackDetails = () => {
       FirstName: feedback.firstName,
       LastName: feedback.lastName,
       PhoneNumber: feedback.phoneNumber,
+      Organization: feedback.organizationName,
       Services: feedback.services ? feedback.services.join(', ') : '',
       Individuals: feedback.individuals ? feedback.individuals.join(', ') : '',
       ProfessionalismRatings: formatRatings(feedback.professionalism),
@@ -264,6 +315,7 @@ const FeedbackDetails = () => {
 
   const clearSearchEmail = () => setSearchEmail('');
   const clearSearchName = () => setSearchName('');
+  const clearSearchOrganization = () => setSearchOrganization('');
 
   return (
     <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-[rgba(255,255,255,0)] text-gray-900'} min-h-screen p-8 transition-all duration-300`}>
@@ -279,6 +331,7 @@ const FeedbackDetails = () => {
           <button onClick={() => toggleFilter('email')} className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Search by Email</button>
           <button onClick={() => toggleFilter('date')} className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Filter by Date</button>
           <button onClick={() => toggleFilter('name')} className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Search by Name</button>
+          <button onClick={() => toggleFilter('organization')} className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">Search by Organization</button>
           <button onClick={handleViewAllFeedbacks} className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">View All Feedbacks</button>
         </div>
 
@@ -286,30 +339,29 @@ const FeedbackDetails = () => {
           <form onSubmit={handleSearchSubmit} className="mb-4">
             <label className="block text-sm font-medium text-white">Search by Email</label>
             <div className="relative flex">
-            <div className="relative w-5/12 ">
-            <div>
-
-  <input
-    type="text"
-    value={searchEmail}
-    onChange={handleSearchChange}
-    placeholder="Enter email"
-    className="mt-1 block w-full rounded-lg p-2 border border-gray-300 bg-white text-black"
-  />
-  {searchEmail && (
-    <button
-      type="button"
-      onClick={clearSearchEmail}
-      className="absolute right-2 top-1/2 transform -translate-y-1/2  text-black px-2 py-1 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105"
-    >
-      X
-    </button>
-  )}
-            </div>
-</div>
-<button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">
-  Search
-</button>
+              <div className="relative w-5/12 ">
+                <div>
+                  <input
+                    type="text"
+                    value={searchEmail}
+                    onChange={handleSearchChange}
+                    placeholder="Enter email"
+                    className="mt-1 block w-full rounded-lg p-2 border border-gray-300 bg-white text-black"
+                  />
+                  {searchEmail && (
+                    <button
+                      type="button"
+                      onClick={clearSearchEmail}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-black px-2 py-1 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105"
+                    >
+                      X
+                    </button>
+                  )}
+                </div>
+              </div>
+              <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">
+                Search
+              </button>
 
               {suggestions.length > 0 && (
                 <ul className="absolute left-0 top-10 right-0 mt-2 bg-white shadow-lg border border-gray-300">
@@ -332,44 +384,87 @@ const FeedbackDetails = () => {
           <form onSubmit={handleSearchNameSubmit} className="mb-4">
             <label className="block text-sm font-medium text-white">Search by Name</label>
             <div className="relative flex">
-  <div className="relative w-5/12 ">
-    <div>
-      <input
-        type="text"
-        value={searchName}
-        onChange={handleSearchNameChange}
-        placeholder="Enter first name + last name"
-        className="mt-1 block w-full rounded-lg p-2 border border-gray-300 bg-white text-black"
-      />
-      {searchName && (
-        <button
-          type="button"
-          onClick={clearSearchName}
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-black px-2 py-1 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105"
-        >
-          X
-        </button>
-      )}
-    </div>
-  </div>
-  <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">
-    Search
-  </button>
-  {suggestions.length > 0 && (
-    <ul className="absolute left-0 top-10 right-0 mt-2 bg-white shadow-lg border border-gray-300">
-      {suggestions.map((suggestion, index) => (
-        <li
-          key={index}
-          className="p-2 cursor-pointer text-black hover:bg-gray-200"
-          onClick={() => handleSuggestionClick(suggestion)}
-        >
-          {suggestion}
-        </li>
-      ))}
-    </ul>
-  )}
-</div>
+              <div className="relative w-5/12 ">
+                <div>
+                  <input
+                    type="text"
+                    value={searchName}
+                    onChange={handleSearchNameChange}
+                    placeholder="Enter first name + last name"
+                    className="mt-1 block w-full rounded-lg p-2 border border-gray-300 bg-white text-black"
+                  />
+                  {searchName && (
+                    <button
+                      type="button"
+                      onClick={clearSearchName}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-black px-2 py-1 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105"
+                    >
+                      X
+                    </button>
+                  )}
+                </div>
+              </div>
+              <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">
+                Search
+              </button>
+              {suggestions.length > 0 && (
+                <ul className="absolute left-0 top-10 right-0 mt-2 bg-white shadow-lg border border-gray-300">
+                  {suggestions.map((suggestion, index) => (
+                    <li
+                      key={index}
+                      className="p-2 cursor-pointer text-black hover:bg-gray-200"
+                      onClick={() => handleSuggestionClick(suggestion)}
+                    >
+                      {suggestion}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </form>
+        )}
 
+        {showOrganizationFilter && (
+          <form onSubmit={handleSearchOrganizationSubmit} className="mb-4">
+            <label className="block text-sm font-medium text-white">Search by Office</label>
+            <div className="relative flex">
+              <div className="relative w-5/12 ">
+                <div>
+                  <input
+                    type="text"
+                    value={searchOrganization}
+                    onChange={handleSearchOrganizationChange}
+                    placeholder="Enter organization name"
+                    className="mt-1 block w-full rounded-lg p-2 border border-gray-300 bg-white text-black"
+                  />
+                  {searchOrganization && (
+                    <button
+                      type="button"
+                      onClick={clearSearchOrganization}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-black px-2 py-1 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105"
+                    >
+                      X
+                    </button>
+                  )}
+                </div>
+              </div>
+              <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm transition-transform duration-300 ease-in-out hover:scale-105">
+                Search
+              </button>
+              {suggestions.length > 0 && (
+                <ul className="absolute left-0 top-10 right-0 mt-2 bg-white shadow-lg border border-gray-300">
+                  {suggestions.map((suggestion, index) => (
+                    <li
+                      key={index}
+                      className="p-2 cursor-pointer text-black hover:bg-gray-200"
+                      onClick={() => handleSuggestionClick(suggestion)}
+                    >
+                      {suggestion}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </form>
         )}
 
@@ -396,8 +491,8 @@ const FeedbackDetails = () => {
 
         <div className="overflow-y-auto" style={{ maxHeight: '400px' }}>
           <table className="min-w-full bg-[rgba(255,255,255,0.1)] shadow-md rounded my-6">
-            <thead className='bg-[rgba(255,255,255,0.1)] '>
-              <tr className='bg-[rgba(255,255,255,0.1)] '>
+            <thead className='bg-[rgba(255,255,255,0.1)]'>
+              <tr className='bg-[rgba(255,255,255,0.1)]'>
                 <th className="py-3 px-6 bg-[rgba(255,255,255,0.1)] text-white font-bold uppercase text-sm text-left">
                   <input
                     type="checkbox"
@@ -453,22 +548,21 @@ const FeedbackDetails = () => {
           </table>
           {/* Pagination */}
           <nav className="flex justify-center mt-4">
-  <ul className="flex pl-0 rounded list-none flex-wrap">
-    {Array.from({ length: Math.ceil(feedbacks.length / feedbacksPerPage) }, (_, index) => (
-      <li key={index} className="relative block mx-1">
-        <button
-          onClick={() => paginate(index + 1)}
-          className={`${
-            currentPage === index + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 text-blue-500'
-          } relative block py-1 px-3 leading-tight rounded-full transition-colors duration-300 hover:bg-blue-400 hover:text-white`}
-        >
-          {index + 1}
-        </button>
-      </li>
-    ))}
-  </ul>
-</nav>
-
+            <ul className="flex pl-0 rounded list-none flex-wrap">
+              {Array.from({ length: Math.ceil(feedbacks.length / feedbacksPerPage) }, (_, index) => (
+                <li key={index} className="relative block mx-1">
+                  <button
+                    onClick={() => paginate(index + 1)}
+                    className={`${
+                      currentPage === index + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 text-blue-500'
+                    } relative block py-1 px-3 leading-tight rounded-full transition-colors duration-300 hover:bg-blue-400 hover:text-white`}
+                  >
+                    {index + 1}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
 
         <div className="flex justify-end mb-4">
@@ -484,7 +578,7 @@ const FeedbackDetails = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <div className=''>
+              <div>
                 <h3 className="text-lg font-semibold mb-2">Feedback Details</h3>
                 <button onClick={() => setSelectedFeedback(null)} className="absolute top-2 right-2 text-black text-3xl">&times;</button>
               </div>
@@ -520,6 +614,15 @@ const FeedbackDetails = () => {
                 <input
                   type="text"
                   value={selectedFeedback.phoneNumber}
+                  readOnly
+                  className="mt-1 block w-full p-2 border border-gray-300 bg-white text-black"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">Organization</label>
+                <input
+                  type="text"
+                  value={selectedFeedback.organizationName}
                   readOnly
                   className="mt-1 block w-full p-2 border border-gray-300 bg-white text-black"
                 />
@@ -597,3 +700,4 @@ const FeedbackDetails = () => {
 };
 
 export default FeedbackDetails;
+
