@@ -142,11 +142,28 @@ const Admin = () => {
     }
   };
 
-  const handleOpenForm = () => {
+  const handleOpenForm = async () => {
     const uniqueId = Date.now();
-    handleSaveUpdates();
-    navigate(`/form/${uniqueId}`); // Redirect to the new URL with a unique identifier
+    const formUrl = `http://localhost:8081/form/${uniqueId}`;
+    
+    try {
+      await axios.post('http://localhost:8083/api/notify-open', { formUrl });
+  
+      window.location.href = formUrl; // Use window.location.href for full page redirect
+      
+    } catch (error) {
+      console.error('Error opening form:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to open form',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+    }
   };
+  
+  
+  
 
   const handleAddQuestion = () => {
     setCustomQuestions([...customQuestions, '']);
@@ -574,7 +591,14 @@ const Admin = () => {
           <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
             <div className="bg-white p-8 rounded shadow-md w-3/4 h-3/4 overflow-y-auto">
               <h2 className="text-2xl font-bold mb-4 text-black">Form Preview</h2>
-              <Form formData={formData} setFormData={setFormData} errors={errors} setErrors={setErrors} />
+              <Form 
+                formData={formData} 
+                setFormData={setFormData} 
+                errors={errors} 
+                setErrors={setErrors} 
+                individualsList={individualsList}
+                servicesList={servicesList}
+              />
               <div className="flex justify-end mt-4">
                 <button
                   onClick={() => setShowPreviewModal(false)}
