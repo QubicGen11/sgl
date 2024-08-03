@@ -3,6 +3,7 @@ import { FaMoon, FaSun, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import FeedbackDetails from './FeedbackDetails';
+import Form from './Form';
 import axios from 'axios';
 
 const Admin = () => {
@@ -19,10 +20,11 @@ const Admin = () => {
   const [newPasswordVisible, setNewPasswordVisible] = useState(false);
   const [defaultSettings, setDefaultSettings] = useState(null);
   const [customQuestions, setCustomQuestions] = useState([]);
-  const [titleOptions, setTitleOptions] = useState([]); // State for titleOptions
-  const [newsletterOptions, setNewsletterOptions] = useState([]); // State for newsletterOptions
-  const [formData, setFormData] = useState({ customResponses: {} }); // Initialize formData with customResponses
-  const [errors, setErrors] = useState({}); // Initialize errors
+  const [titleOptions, setTitleOptions] = useState([]);
+  const [newsletterOptions, setNewsletterOptions] = useState([]);
+  const [formData, setFormData] = useState({ customResponses: {} });
+  const [errors, setErrors] = useState({});
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const navigate = useNavigate();
 
@@ -30,44 +32,44 @@ const Admin = () => {
     const fetchLists = async () => {
       try {
         const response = await axios.get('http://localhost:8083/api/lists');
-        const data = response.data || {}; // Fallback to an empty object if response.data is null
-        setIndividualsList(data.individualsList || []); // Default to an empty array if null
-        setServicesList(data.servicesList || []); // Default to an empty array if null
+        const data = response.data || {};
+        setIndividualsList(data.individualsList || []);
+        setServicesList(data.servicesList || []);
       } catch (error) {
         console.error('Error fetching lists:', error);
       }
     };
-  
+
     fetchLists();
   }, []);
-  
+
   useEffect(() => {
     const fetchDefaultSettings = async () => {
       try {
-        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+        const token = localStorage.getItem('token');
         if (!token) {
           throw new Error('No token found');
         }
-  
+
         const response = await axios.get('http://localhost:8083/api/admin/form-defaults', {
           headers: {
-            Authorization: `Bearer ${token}`, // Include the token in the request header
+            Authorization: `Bearer ${token}`,
           },
         });
-        const data = response.data || {}; // Fallback to an empty object if response.data is null
+        const data = response.data || {};
         setDefaultSettings({
           email: data.email || '',
           organizationName: data.organizationName || '',
           firstName: data.firstName || '',
           lastName: data.lastName || '',
           phoneNumber: data.phoneNumber || '',
-          feedbackQuestions: data.feedbackQuestions || [], // Default to an empty array if null
-          titleOptions: data.titleOptions || [], // Default to an empty array if null
-          newsletterOptions: data.newsletterOptions || [], // Default to an empty array if null
+          feedbackQuestions: data.feedbackQuestions || [],
+          titleOptions: data.titleOptions || [],
+          newsletterOptions: data.newsletterOptions || [],
         });
-        setCustomQuestions(data.feedbackQuestions || []); // Default to an empty array if null
-        setTitleOptions(data.titleOptions || []); // Set title options
-        setNewsletterOptions(data.newsletterOptions || []); // Set newsletter options
+        setCustomQuestions(data.feedbackQuestions || []);
+        setTitleOptions(data.titleOptions || []);
+        setNewsletterOptions(data.newsletterOptions || []);
         setFormData({
           customResponses: (data.feedbackQuestions || []).reduce((acc, question) => {
             acc[question] = '';
@@ -86,7 +88,7 @@ const Admin = () => {
         }
       }
     };
-  
+
     fetchDefaultSettings();
   }, []);
 
@@ -106,20 +108,20 @@ const Admin = () => {
     setServicesList(updatedList);
   };
 
-  const handleSubmitAllUpdates = async () => {
+  const handleSaveUpdates = async () => {
     try {
       const token = localStorage.getItem('token');
       await axios.all([
         axios.post('http://localhost:8083/api/lists/individuals', { updatedList: individualsList }),
         axios.post('http://localhost:8083/api/lists/services', { updatedList: servicesList }),
-        axios.post('http://localhost:8083/api/admin/form-defaults', { 
-          ...defaultSettings, 
-          feedbackQuestions: customQuestions, 
-          titleOptions, 
-          newsletterOptions 
+        axios.post('http://localhost:8083/api/admin/form-defaults', {
+          ...defaultSettings,
+          feedbackQuestions: customQuestions,
+          titleOptions,
+          newsletterOptions
         }, {
           headers: {
-            Authorization: `Bearer ${token}` // Include the token in the request header
+            Authorization: `Bearer ${token}`
           }
         })
       ]);
@@ -138,6 +140,12 @@ const Admin = () => {
         confirmButtonText: 'OK',
       });
     }
+  };
+
+  const handleOpenForm = () => {
+    const uniqueId = Date.now();
+    handleSaveUpdates();
+    navigate(`/form/${uniqueId}`); // Redirect to the new URL with a unique identifier
   };
 
   const handleAddQuestion = () => {
@@ -235,7 +243,7 @@ const Admin = () => {
             onClick={() => setViewMode('view')}
             className={`bg-blue-500 text-white px-4 py-2 rounded-md ${viewMode === 'view' ? 'bg-blue-700' : ''}`}
           >
-            View Feedback 
+            View Feedback
           </button>
           <div
             onMouseEnter={handleMouseEnter}
@@ -269,7 +277,7 @@ const Admin = () => {
             <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
               <div className="bg-white p-4 rounded shadow-md h-[60vh] w-[60vw] overflow-y-auto">
                 <h2 className="text-xl font-bold mb-4 text-black">Edit Form - Client Details</h2>
-               
+
                 <div className="mb-8">
                   <div className="flex flex-wrap -mx-2">
                     <div className="mb-4 w-1/2 px-2">
@@ -352,7 +360,7 @@ const Admin = () => {
                       />
                     </div>
                   </div>
-                </div> 
+                </div>
 
                 <h2 className="text-xl font-bold mb-4 text-black">Edit Form - Employee Details</h2>
                 <div className="mb-8">
@@ -444,7 +452,7 @@ const Admin = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mb-8">
                   <h3 className="text-lg font-semibold text-black">Edit Custom Questions</h3>
                   {customQuestions.map((question, index) => (
@@ -470,13 +478,25 @@ const Admin = () => {
                     Add Question
                   </button>
                 </div>
-                
+
                 <div className="flex justify-end mt-4">
                   <button
-                    onClick={handleSubmitAllUpdates}
+                    onClick={handleSaveUpdates}
                     className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
                   >
-                    Save All
+                    Save
+                  </button>
+                  <button
+                    onClick={handleOpenForm}
+                    className="bg-green-500 text-white px-4 py-2 rounded-md"
+                  >
+                    Open Form
+                  </button>
+                  <button
+                    onClick={() => setShowPreviewModal(true)}
+                    className="bg-gray-500 text-white px-4 py-2 rounded"
+                  >
+                    Preview Form
                   </button>
                   <button
                     onClick={() => setViewMode('view')}
@@ -549,10 +569,26 @@ const Admin = () => {
             </div>
           </div>
         )}
+
+        {showPreviewModal && (
+          <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
+            <div className="bg-white p-8 rounded shadow-md w-3/4 h-3/4 overflow-y-auto">
+              <h2 className="text-2xl font-bold mb-4 text-black">Form Preview</h2>
+              <Form formData={formData} setFormData={setFormData} errors={errors} setErrors={setErrors} />
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={() => setShowPreviewModal(false)}
+                  className="bg-gray-500 text-white px-4 py-2 rounded"
+                >
+                  Close Preview
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default Admin;
-

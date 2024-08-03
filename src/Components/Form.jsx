@@ -190,19 +190,6 @@ const Form = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
   
-    // Consolidate feedbacks into a single field if needed
-    const consolidatedFeedback = Object.entries(formData.feedbacks)
-      .map(([individual, feedback]) => `${individual}: ${feedback}`)
-      .join(' | ');
-  
-    const submissionData = {
-      ...formData,
-      feedback: consolidatedFeedback,
-      professionalism: formData.professionalism,
-      responseTime: formData.responseTime,
-      overallServices: formData.overallServices,
-    };
-  
     if (!validateForm()) {
       Swal.fire({
         title: 'Error',
@@ -216,20 +203,19 @@ const Form = () => {
     setLoading(true);
   
     try {
-      const formSubmitPromise = axios.post('http://localhost:8083/api/feedback', submissionData, {
+      // Parallel API calls
+      const formSubmitPromise = axios.post('http://localhost:8083/api/feedback', {
+        ...formData,
+        feedback: Object.entries(formData.feedbacks)
+          .map(([individual, feedback]) => `${individual}: ${feedback}`)
+          .join(' | '),
+      }, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
   
-      const emailSendPromise = axios.post('http://localhost:8083/api/mail/send-email', submissionData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      // Use Promise.all to send both the form data and email concurrently
-      const [formSubmitResponse] = await Promise.all([formSubmitPromise, emailSendPromise]);
+      const [formSubmitResponse] = await Promise.all([formSubmitPromise]);
   
       if (formSubmitResponse.status === 200 || formSubmitResponse.status === 201) {
         Swal.fire({
@@ -256,6 +242,7 @@ const Form = () => {
     }
   };
   
+
   
   
 

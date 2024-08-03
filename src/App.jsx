@@ -13,8 +13,8 @@ const App = () => {
         <Route path="/" element={<Form />} />
         <Route path="/all" element={<FeedbackDetails />} />
         <Route path="/login" element={<AdminLogin />} />
-        
         <Route path="/admin" element={<ProtectedRoute component={Admin} />} />
+        <Route path="/form/:id" element={<Form />} />  {/* New dynamic form route */}
       </Routes>
     </BrowserRouter>
   );
