@@ -645,7 +645,7 @@ const FeedbackDetails = () => {
                   className="mt-1 block w-full p-2 border border-gray-300 bg-white text-black"
                 />
               </div>
-              {selectedFeedback.individuals && selectedFeedback.individuals.map((individual, index) => (
+              {/* {selectedFeedback.individuals && selectedFeedback.individuals.map((individual, index) => (
                 <div key={index} className="mb-4">
                   <h4 className="text-lg font-semibold mb-2">{individual}</h4>
                   <label className="block text-sm font-medium text-gray-700">Professionalism Rating</label>
@@ -667,6 +667,19 @@ const FeedbackDetails = () => {
                   <label className="block text-sm font-medium text-gray-700">Overall Services Rating</label>
                   <StarRatings
                     rating={parseInt(selectedFeedback.overallServices[individual]) || 0}
+                    starRatedColor="gold"
+                    numberOfStars={5}
+                    starDimension="24px"
+                    starSpacing="2px"
+                  />
+                </div>
+              ))} */}
+              {/* Render custom feedback questions */}
+              {selectedFeedback.customResponses && Object.keys(selectedFeedback.customResponses).map((question, index) => (
+                <div key={index} className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700">{question}</label>
+                  <StarRatings
+                    rating={parseInt(selectedFeedback.customResponses[question]) || 0}
                     starRatedColor="gold"
                     numberOfStars={5}
                     starDimension="24px"
@@ -700,4 +713,3 @@ const FeedbackDetails = () => {
 };
 
 export default FeedbackDetails;
-

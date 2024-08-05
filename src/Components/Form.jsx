@@ -22,7 +22,7 @@ const Form = () => {
     recommend: '',
     subscribeNewsletter: '',
     termsAccepted: false,
-    customResponses: {}
+    customResponses: {}  // Store responses for custom questions
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -56,6 +56,10 @@ const Form = () => {
           firstName: data.firstName || '',
           lastName: data.lastName || '',
           phoneNumber: data.phoneNumber || '',
+          customResponses: (data.feedbackQuestions || []).reduce((acc, question) => {
+            acc[question] = 0; // Initialize the response with a 0 rating
+            return acc;
+          }, {}),
         }));
       } catch (error) {
         console.error('Error fetching default settings:', error);
@@ -108,23 +112,13 @@ const Form = () => {
     });
   };
 
-  const handleRatingChange = (newRating, name, field) => {
-    setFormData((prevFormData) => ({
-      ...prevFormData,
-      [field]: {
-        ...prevFormData[field],
-        [name]: newRating
-      }
-    }));
-  };
-
-  const handleCustomResponseChange = (question, value) => {
+  const handleRatingChange = (newRating, question) => {
     setFormData((prevFormData) => ({
       ...prevFormData,
       customResponses: {
         ...prevFormData.customResponses,
-        [question]: value
-      }
+        [question]: newRating,
+      },
     }));
   };
 
@@ -147,9 +141,7 @@ const Form = () => {
 
   const validateForm = () => {
     const newErrors = {};
-  
-    console.log('Form Data:', formData); // Log the entire formData object
-  
+
     if (!formData.title) newErrors.title = 'Title is required';
     if (!formData.email) newErrors.email = 'Email is required';
     if (!formData.firstName) newErrors.firstName = 'First Name is required';
@@ -158,34 +150,35 @@ const Form = () => {
     if (!formData.organizationName) newErrors.organizationName = 'Organization Name is required';
     if (formData.services.length === 0) newErrors.services = 'At least one service must be selected';
     if (formData.individuals.length === 0) newErrors.individuals = 'At least one individual must be selected';
-  
-    console.log('Errors after basic checks:', newErrors); // Log errors after basic checks
-  
-    formData.individuals.forEach(individual => {
-      console.log('Checking individual:', individual); // Log the individual being checked
-      if (!formData.professionalism[individual]) {
-        newErrors[`professionalism-${individual}`] = `Professionalism rating for ${individual} is required`;
-      }
-      if (!formData.responseTime[individual]) {
-        newErrors[`responseTime-${individual}`] = `Response time rating for ${individual} is required`;
-      }
-      if (!formData.overallServices[individual]) {
-        newErrors[`overallServices-${individual}`] = `Overall services rating for ${individual} is required`;
-      }
-      if (!formData.feedbacks[individual]) {
-        newErrors[`feedback-${individual}`] = `Feedback for ${individual} is required`;
+
+    // formData.individuals.forEach(individual => {
+    //   if (!formData.professionalism[individual]) {
+    //     newErrors[`professionalism-${individual}`] = `Professionalism rating for ${individual} is required`;
+    //   }
+    //   if (!formData.responseTime[individual]) {
+    //     newErrors[`responseTime-${individual}`] = `Response time rating for ${individual} is required`;
+    //   }
+    //   if (!formData.overallServices[individual]) {
+    //     newErrors[`overallServices-${individual}`] = `Overall services rating for ${individual} is required`;
+    //   }
+    //   if (!formData.feedbacks[individual]) {
+    //     newErrors[`feedback-${individual}`] = `Feedback for ${individual} is required`;
+    //   }
+    // });
+
+    // Validate custom questions
+    defaultSettings.feedbackQuestions.forEach(question => {
+      if (!formData.customResponses[question]) {
+        newErrors[`customResponse-${question}`] = `Response for "${question}" is required`;
       }
     });
-  
+
     if (!formData.recommend) newErrors.recommend = 'Recommendation is required';
     if (!formData.termsAccepted) newErrors.termsAccepted = 'You must accept the terms and conditions';
-  
-    console.log('Final Errors:', newErrors); // Log final errors
-  
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -202,22 +195,24 @@ const Form = () => {
   
     setLoading(true);
   
+    console.log('Form data being submitted:', formData); // Add this line
+  
     try {
-      // Parallel API calls
-      const formSubmitPromise = axios.post('http://localhost:8083/api/feedback', {
+      // Combine the feedbacks into a single string
+      const combinedFeedback = Object.entries(formData.feedbacks)
+        .map(([individual, feedback]) => `${individual}: ${feedback}`)
+        .join(' | ');
+  
+      const response = await axios.post('http://localhost:8083/api/feedback', {
         ...formData,
-        feedback: Object.entries(formData.feedbacks)
-          .map(([individual, feedback]) => `${individual}: ${feedback}`)
-          .join(' | '),
+        feedback: combinedFeedback,  // Send the combined feedback as a single field
       }, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
   
-      const [formSubmitResponse] = await Promise.all([formSubmitPromise]);
-  
-      if (formSubmitResponse.status === 200 || formSubmitResponse.status === 201) {
+      if (response.status === 200 || response.status === 201) {
         Swal.fire({
           title: 'Success!',
           text: 'Form data saved!',
@@ -241,9 +236,6 @@ const Form = () => {
       setLoading(false);
     }
   };
-  
-
-  
   
 
   return (
@@ -270,8 +262,9 @@ const Form = () => {
       >
         <h2 className="text-center text-2xl font-bold mb-4">Somireddy Law Group PLLC - Client Feedback</h2>
         <p className="text-center mb-4">We are dedicated to delivering the highest quality of service to our clients. Your feedback is invaluable to enable us to better meet your expectations. We sincerely appreciate your time and cooperation in this matter. To assist us in improving our services, we kindly request your input on the following points:</p>
-        
+
         <form onSubmit={handleSubmit}>
+          {/* Render default form fields... */}
           <div className="mb-4">
             <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Title <span className="text-red-500">*</span></label>
             <select
@@ -332,7 +325,7 @@ const Form = () => {
             />
             {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
           </div>
-          
+
           <div className="mb-4">
             <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Phone number <span className="text-red-500">*</span></label>
             <input
@@ -420,13 +413,13 @@ const Form = () => {
             <div key={individual}>
               <h3 className="text-lg font-semibold mb-2">{individual}</h3>
 
-              <div className="mb-4">
+              {/* <div className="mb-4">
                 <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>On a scale of 1-5, how would you rate {individual}'s professionalism? <span className="text-red-500">*</span></label>
                 <StarRatings
                   rating={formData.professionalism[individual] || 0}
                   starRatedColor="gold"
                   starHoverColor="gold"
-                  changeRating={(newRating) => handleRatingChange(newRating, individual, 'professionalism')}
+                  changeRating={(newRating) => handleRatingChange(newRating, `${individual}-professionalism`)}
                   numberOfStars={5}
                   name={`professionalism-${individual}`}
                   starDimension="24px"
@@ -441,7 +434,7 @@ const Form = () => {
                   rating={formData.responseTime[individual] || 0}
                   starRatedColor="gold"
                   starHoverColor="gold"
-                  changeRating={(newRating) => handleRatingChange(newRating, individual, 'responseTime')}
+                  changeRating={(newRating) => handleRatingChange(newRating, `${individual}-responseTime`)}
                   numberOfStars={5}
                   name={`responseTime-${individual}`}
                   starDimension="24px"
@@ -456,14 +449,14 @@ const Form = () => {
                   rating={formData.overallServices[individual] || 0}
                   starRatedColor="gold"
                   starHoverColor="gold"
-                  changeRating={(newRating) => handleRatingChange(newRating, individual, 'overallServices')}
+                  changeRating={(newRating) => handleRatingChange(newRating, `${individual}-overallServices`)}
                   numberOfStars={5}
                   name={`overallServices-${individual}`}
                   starDimension="24px"
                   starSpacing="2px"
                 />
                 {errors[`overallServices-${individual}`] && <p className="text-red-500 text-sm">{errors[`overallServices-${individual}`]}</p>}
-              </div>
+              </div> */}
 
               <div className="mb-4">
                 <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Please provide any feedback that would be helpful for us to improve our services <span className="text-red-500">*</span></label>
@@ -485,12 +478,15 @@ const Form = () => {
               <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 {question} <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                value={formData.customResponses[question] || ''}
-                onChange={(e) => handleCustomResponseChange(question, e.target.value)}
-                className={`mt-1 block w-full p-2 border ${darkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-black'}`}
-                required
+              <StarRatings
+                rating={formData.customResponses[question] || 0}
+                starRatedColor="gold"
+                starHoverColor="gold"
+                changeRating={(newRating) => handleRatingChange(newRating, question)}
+                numberOfStars={5}
+                name={`customResponse-${question}`}
+                starDimension="24px"
+                starSpacing="2px"
               />
               {errors[`customResponse-${question}`] && <p className="text-red-500 text-sm">{errors[`customResponse-${question}`]}</p>}
             </div>

@@ -3,6 +3,7 @@ import { FaMoon, FaSun, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import FeedbackDetails from './FeedbackDetails';
+import { MdDeleteOutline } from "react-icons/md";
 import Form from './Form';
 import axios from 'axios';
 
@@ -293,150 +294,94 @@ const Admin = () => {
           {viewMode === 'edit-form' && (
             <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
               <div className="bg-white p-4 rounded shadow-md h-[60vh] w-[60vw] overflow-y-auto">
-                <h2 className="text-xl font-bold mb-4 text-black">Edit Form - Client Details</h2>
+                <h2 className="text-xl font-bold mb-4 text-black">Client Details</h2>
 
                 <div className="mb-8">
                   <div className="flex flex-wrap -mx-2">
-                    <div className="mb-4 w-1/2 px-2">
-                      <label className="block text-sm font-medium text-gray-700">Title</label>
-                      {titleOptions.map((option, index) => (
-                        <div key={index} className="flex items-center mb-2">
-                          <input
-                            type="text"
-                            value={option}
-                            onChange={(e) => {
-                              const updatedList = [...titleOptions];
-                              updatedList[index] = e.target.value;
-                              setTitleOptions(updatedList);
-                            }}
-                            className="flex-1 text-black mr-2 p-2 border border-gray-300 rounded"
-                          />
-                          <button
-                            onClick={() => {
-                              const updatedList = titleOptions.filter((_, i) => i !== index);
-                              setTitleOptions(updatedList);
-                            }}
-                            className="bg-red-500 text-white px-2 py-1 rounded"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        onClick={() => {
-                          setTitleOptions([...titleOptions, '']);
-                        }}
-                        className="bg-green-500 text-white px-4 py-2 rounded mt-2"
-                      >
-                        Add Title Option
-                      </button>
-                    </div>
-                    <div className="mb-4 w-1/2 px-2">
+                    <div className="mb-4 w-full px-2">
                       <label className="block text-sm font-medium text-gray-700">Email</label>
                       <input
                         type="text"
                         value={defaultSettings?.email || ''}
                         onChange={(e) => setDefaultSettings({ ...defaultSettings, email: e.target.value })}
                         className="flex-1 p-2 text-black border border-gray-300 rounded"
+                         placeholder='Enter Email'
                       />
                     </div>
-                    <div className="mb-4 w-1/2 px-2">
-                      <label className="block text-sm font-medium text-gray-700">Office Name</label>
-                      <input
-                        type="text"
-                        value={defaultSettings?.organizationName || ''}
-                        onChange={(e) => setDefaultSettings({ ...defaultSettings, organizationName: e.target.value })}
-                        className="flex-1 p-2 text-black border border-gray-300 rounded"
-                      />
+                    <div className="mb-4 w-full px-2">
+                      
+                      <div className="flex space-x-8">
+                        <div >
+
+                      <label className="block text-sm font-medium text-gray-700">Title</label>
+                        <input
+                          type="text"
+                          value={defaultSettings?.title || ''}
+                          onChange={(e) => setDefaultSettings({ ...defaultSettings, title: e.target.value })}
+                          className="flex-1 p-2 text-black border border-gray-300 rounded"
+                          placeholder='Add a title'
+                        />
+                        </div>
+
+                        <div>
+                        <label className="block text-sm font-medium text-gray-700">First Name</label>
+
+                        <input
+                          type="text"
+                          value={defaultSettings?.firstName || ''}
+                          onChange={(e) => setDefaultSettings({ ...defaultSettings, firstName: e.target.value })}
+                          className="flex-1 p-2 text-black border border-gray-300 rounded"
+                           placeholder='Enter First Name'
+                        />
+                        
+                        </div>
+
+                        <div>
+
+                        <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                        <input
+                          type="text"
+                          value={defaultSettings?.lastName || ''}
+                          onChange={(e) => setDefaultSettings({ ...defaultSettings, lastName: e.target.value })}
+                          className="flex-1 p-2 text-black border border-gray-300 rounded"
+                           placeholder='Enter Last Name'
+                        />
+                        
+                        </div>
+                      </div>
                     </div>
-                    <div className="mb-4 w-1/2 px-2">
-                      <label className="block text-sm font-medium text-gray-700">First Name</label>
-                      <input
-                        type="text"
-                        value={defaultSettings?.firstName || ''}
-                        onChange={(e) => setDefaultSettings({ ...defaultSettings, firstName: e.target.value })}
-                        className="flex-1 p-2 text-black border border-gray-300 rounded"
-                      />
-                    </div>
-                    <div className="mb-4 w-1/2 px-2">
-                      <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                      <input
-                        type="text"
-                        value={defaultSettings?.lastName || ''}
-                        onChange={(e) => setDefaultSettings({ ...defaultSettings, lastName: e.target.value })}
-                        className="flex-1 p-2 text-black border border-gray-300 rounded"
-                      />
-                    </div>
-                    <div className="mb-4 w-1/2 px-2">
-                      <label className="block text-sm font-medium text-gray-700">Phone Number with country code</label>
+                    <div className="mb-4 w-full px-2">
+                      <label className="block text-sm font-medium text-gray-700">Phone Number with Country Code</label>
                       <input
                         type="text"
                         value={defaultSettings?.phoneNumber || ''}
                         onChange={(e) => setDefaultSettings({ ...defaultSettings, phoneNumber: e.target.value })}
                         className="flex-1 p-2 text-black border border-gray-300 rounded"
+                         placeholder='Enter Phone Number '
                       />
                     </div>
                   </div>
                 </div>
 
-                <h2 className="text-xl font-bold mb-4 text-black">Edit Form - Employee Details</h2>
+                <h2 className="text-xl font-bold mb-4 text-black">Office & Employee Details</h2>
                 <div className="mb-8">
                   <div className="flex flex-wrap -mx-2">
-                    <div className="mb-8 w-1/2 px-2">
-                      <h3 className="text-lg font-semibold text-black">Add Employee Name</h3>
-                      {individualsList.map((individual, index) => (
-                        <div key={index} className="flex items-center mb-2">
-                          <input
-                            type="text"
-                            value={individual.name}
-                            onChange={(e) => {
-                              const updatedList = [...individualsList];
-                              updatedList[index].name = e.target.value;
-                              setIndividualsList(updatedList);
-                            }}
-                            className="flex-1 mr-2 p-2 text-black border border-gray-300 rounded"
-                          />
-                          <button
-                            onClick={() => {
-                              const updatedList = individualsList.filter((_, i) => i !== index);
-                              setIndividualsList(updatedList);
-                            }}
-                            className="bg-red-500 text-white px-2 py-1 rounded"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        onClick={() => {
-                          setIndividualsList([...individualsList, { name: '', designation: '' }]);
-                        }}
-                        className="bg-green-500 text-white px-4 py-2 rounded mt-2"
-                      >
-                        Add Employee
-                      </button>
+                    <div className="mb-4 w-full px-2">
+                      <label className="block text-sm font-medium text-gray-700">Office Name</label>
+                      <input
+                        type="text"
+                        value={defaultSettings?.organizationName || ''}
+                        onChange={(e) => setDefaultSettings({ ...defaultSettings, organizationName: e.target.value })}
+                        className="flex-1 p-2 text-black border border-gray-300 rounded mt-2"
+                         placeholder='Add Office Name'
+                      />
                     </div>
-                    <div className="mb-8 w-1/2 px-2">
-                      <h3 className="text-lg font-semibold text-black">Add Designation</h3>
-                      {individualsList.map((individual, index) => (
-                        <div key={index} className="flex items-center mb-2">
-                          <input
-                            type="text"
-                            value={individual.designation}
-                            onChange={(e) => {
-                              const updatedList = [...individualsList];
-                              updatedList[index].designation = e.target.value;
-                              setIndividualsList(updatedList);
-                            }}
-                            className="flex-1 mr-2 p-2 text-black border border-gray-300 rounded"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mb-8 w-1/2 px-2">
-                      <h3 className="text-lg font-semibold text-black">Add Services Name</h3>
+                    <div className="mb-4 w-full px-2">
+                      <label className="block text-sm font-medium text-gray-700">Services Provided</label>
                       {servicesList.map((service, index) => (
-                        <div key={index} className="flex items-center mb-2">
+                        <div key={index} className="flex items-center mb-2 mt-2">
+
+                          
                           <input
                             type="text"
                             value={service}
@@ -445,7 +390,8 @@ const Admin = () => {
                               updatedList[index] = e.target.value;
                               setServicesList(updatedList);
                             }}
-                            className="flex-1 text-black mr-2 p-2 border border-gray-300 rounded"
+                            className="flex-2 text-black mr-2 p-2 border border-gray-300 rounded"
+                            placeholder='Add a Service'
                           />
                           <button
                             onClick={() => {
@@ -454,7 +400,7 @@ const Admin = () => {
                             }}
                             className="bg-red-500 text-white px-2 py-1 rounded"
                           >
-                            Delete
+                           <MdDeleteOutline />
                           </button>
                         </div>
                       ))}
@@ -465,6 +411,70 @@ const Admin = () => {
                         className="bg-green-500 text-white px-4 py-2 rounded mt-2"
                       >
                         Add Service
+                      </button>
+                    </div>
+                    <div className="mb-4 w-full px-2">
+                      <label className="block text-sm font-medium text-gray-700">Employee Name and Designation</label>
+                      {individualsList.map((individual, index) => (
+
+
+
+                        <div key={index} className="flex space-x-2 mb-2">
+
+<div>
+                        {/* <label className="block text-sm font-medium text-gray-700">Employee Name</label> */}
+
+                        <input
+                            type="text"
+                            value={individual.name}
+                            onChange={(e) => {
+                              const updatedList = [...individualsList];
+                              updatedList[index].name = e.target.value;
+                              setIndividualsList(updatedList);
+                            }}
+                            className="flex-1 p-2 text-black border border-gray-300 rounded mt-2"
+                            placeholder='Employee Name'
+                          />
+                        </div>
+
+                        
+                        <div>
+                        {/* <label className="block text-sm font-medium text-gray-700">Employee Designation</label> */}
+
+                        <input
+                            type="text"
+                            value={individual.designation}
+                            onChange={(e) => {
+                              const updatedList = [...individualsList];
+                              updatedList[index].designation = e.target.value;
+                              setIndividualsList(updatedList);
+                            }}
+                            className="flex-1 p-2 text-black border border-gray-300 rounded mt-2"
+                            placeholder='Employee Designation'
+                          />
+                        </div>
+
+                         
+                          <button
+                            onClick={() => {
+                              const updatedList = individualsList.filter((_, i) => i !== index);
+                              setIndividualsList(updatedList);
+                            }}
+                            className="bg-red-500 text-white px-2  rounded h-8 relative top-3"
+                          >
+                               <MdDeleteOutline />
+                          </button>
+
+                          
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => {
+                          setIndividualsList([...individualsList, { name: '', designation: '' }]);
+                        }}
+                        className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+                      >
+                        Add Employee
                       </button>
                     </div>
                   </div>
@@ -479,12 +489,13 @@ const Admin = () => {
                         value={question}
                         onChange={(e) => handleUpdateQuestion(index, e.target.value)}
                         className="flex-1 mr-2 p-2 text-black border border-gray-300 rounded"
+                         placeholder='Add a Custom Field'
                       />
                       <button
                         onClick={() => handleDeleteQuestion(index)}
                         className="bg-red-500 text-white px-2 py-1 rounded"
                       >
-                        Delete
+                        <MdDeleteOutline />
                       </button>
                     </div>
                   ))}
@@ -496,31 +507,57 @@ const Admin = () => {
                   </button>
                 </div>
 
-                <div className="flex justify-end mt-4">
+                <div className="flex justify-end mt-4 space-x-4">
+                  
                   <button
                     onClick={handleSaveUpdates}
-                    className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                    className="bg-blue-500 text-white px-4 py-2 rounded transform hover:scale-110 transition duration-500 ease-in-out"
+                    
                   >
+                    
                     Save
                   </button>
-                  <button
-                    onClick={handleOpenForm}
-                    className="bg-green-500 text-white px-4 py-2 rounded-md"
-                  >
-                    Open Form
-                  </button>
+
                   <button
                     onClick={() => setShowPreviewModal(true)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded"
+                    className="bg-gray-500 text-white px-4 py-2 rounded transform hover:scale-110 transition duration-500 ease-in-out"
                   >
                     Preview Form
                   </button>
                   <button
-                    onClick={() => setViewMode('view')}
-                    className="bg-gray-500 text-white px-4 py-2 rounded"
+                    onClick={handleOpenForm}
+                    className="bg-green-500 text-white px-4  rounded-md transform hover:scale-110 transition duration-500 ease-in-out"
                   >
-                    Cancel
+                    Submit Form
                   </button>
+                  
+               
+                  <button
+  onClick={() => setViewMode('view')}
+  className="bg-white text-center w-48 rounded-2xl h-14 relative font-sans text-black text-xl font-semibold group"
+>
+  <div
+    className="bg-red-500 rounded-xl h-12 w-1/4 flex items-center justify-center absolute left-1 top-[4px] group-hover:w-[184px] z-10 duration-500"
+  >
+    <svg
+      width="25px"
+      height="25px"
+      viewBox="0 0 1024 1024"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fill="#ffffff"
+        d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"
+      ></path>
+      <path
+        fill="#ffffff"
+        d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"
+      ></path>
+    </svg>
+  </div>
+  
+</button>
+
                 </div>
               </div>
             </div>
