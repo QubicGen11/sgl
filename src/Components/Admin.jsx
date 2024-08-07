@@ -26,6 +26,7 @@ const Admin = () => {
   const [formData, setFormData] = useState({ customResponses: {} });
   const [errors, setErrors] = useState({});
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [clientType, setClientType] = useState('Individual');
 
   const navigate = useNavigate();
 
@@ -58,8 +59,12 @@ const Admin = () => {
           },
         });
         const data = response.data || {};
+        console.log('Fetched Default Settings:', data);
         setDefaultSettings({
           email: data.email || '',
+          companyEmail: data.companyEmail || '',
+          companyName: data.companyName || '',
+          companyPhoneNumber: data.companyPhoneNumber || '',
           organizationName: data.organizationName || '',
           firstName: data.firstName || '',
           lastName: data.lastName || '',
@@ -76,7 +81,17 @@ const Admin = () => {
             acc[question] = '';
             return acc;
           }, {}),
+          title: data.titleOptions && data.titleOptions.length > 0 ? data.titleOptions[0] : '',
+          email: data.email || '',
+          companyEmail: data.companyEmail || '',
+          companyName: data.companyName || '',
+          companyPhoneNumber: data.companyPhoneNumber || '',
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+          phoneNumber: data.phoneNumber || '',
+          organizationName: data.organizationName || '',
         });
+        console.log('Initialized formData:', formData);
       } catch (error) {
         console.error('Error fetching default settings:', error);
         if (error.response && error.response.status === 403) {
@@ -126,6 +141,7 @@ const Admin = () => {
           }
         })
       ]);
+      console.log('Saved Updates:', { individualsList, servicesList, defaultSettings, customQuestions, titleOptions, newsletterOptions });
       Swal.fire({
         title: 'Success',
         text: 'All updates saved successfully',
@@ -149,9 +165,8 @@ const Admin = () => {
     
     try {
       await axios.post('http://localhost:8083/api/notify-open', { formUrl });
-  
-      window.location.href = formUrl; // Use window.location.href for full page redirect
-      
+      console.log('Opening Form:', formUrl);
+      navigate(`/form/${uniqueId}`);
     } catch (error) {
       console.error('Error opening form:', error);
       Swal.fire({
@@ -162,9 +177,6 @@ const Admin = () => {
       });
     }
   };
-  
-  
-  
 
   const handleAddQuestion = () => {
     setCustomQuestions([...customQuestions, '']);
@@ -296,72 +308,122 @@ const Admin = () => {
               <div className="bg-white p-4 rounded shadow-md h-[60vh] w-[60vw] overflow-y-auto">
                 <h2 className="text-xl font-bold mb-4 text-black">Client Details</h2>
 
-                <div className="mb-8">
-                  <div className="flex flex-wrap -mx-2">
-                    <div className="mb-4 w-full px-2">
-                      <label className="block text-sm font-medium text-gray-700">Email</label>
-                      <input
-                        type="text"
-                        value={defaultSettings?.email || ''}
-                        onChange={(e) => setDefaultSettings({ ...defaultSettings, email: e.target.value })}
-                        className="flex-1 p-2 text-black border border-gray-300 rounded"
-                         placeholder='Enter Email'
-                      />
-                    </div>
-                    <div className="mb-4 w-full px-2">
-                      
-                      <div className="flex space-x-8">
-                        <div >
+                <div className="flex space-x-4 mb-4">
+                  <button
+                    onClick={() => setClientType('Individual')}
+                    className={`px-4 py-2 rounded-md ${clientType === 'Individual' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                  >
+                    Individual
+                  </button>
+                  <button
+                    onClick={() => setClientType('Corporate')}
+                    className={`px-4 py-2 rounded-md ${clientType === 'Corporate' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                  >
+                    Corporate
+                  </button>
+                </div>
 
-                      <label className="block text-sm font-medium text-gray-700">Title</label>
-                        <input
-                          type="text"
-                          value={defaultSettings?.title || ''}
-                          onChange={(e) => setDefaultSettings({ ...defaultSettings, title: e.target.value })}
-                          className="flex-1 p-2 text-black border border-gray-300 rounded"
-                          placeholder='Add a title'
-                        />
+                {clientType === 'Individual' && (
+                  <>
+                    <div className="mb-8">
+                      <div className="flex flex-wrap -mx-2">
+                        <div className="mb-4 w-full px-2">
+                          <label className="block text-sm font-medium text-gray-700">Email</label>
+                          <input
+                            type="text"
+                            value={defaultSettings?.email || ''}
+                            onChange={(e) => setDefaultSettings({ ...defaultSettings, email: e.target.value })}
+                            className="flex-1 p-2 text-black border border-gray-300 rounded"
+                            placeholder='Enter Email'
+                          />
                         </div>
-
-                        <div>
-                        <label className="block text-sm font-medium text-gray-700">First Name</label>
-
-                        <input
-                          type="text"
-                          value={defaultSettings?.firstName || ''}
-                          onChange={(e) => setDefaultSettings({ ...defaultSettings, firstName: e.target.value })}
-                          className="flex-1 p-2 text-black border border-gray-300 rounded"
-                           placeholder='Enter First Name'
-                        />
-                        
+                        <div className="mb-4 w-full px-2">
+                          <div className="flex space-x-8">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Title</label>
+                              <input
+                                type="text"
+                                value={defaultSettings?.title || ''}
+                                onChange={(e) => setDefaultSettings({ ...defaultSettings, title: e.target.value })}
+                                className="flex-1 p-2 text-black border border-gray-300 rounded"
+                                placeholder='Add a title'
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">First Name</label>
+                              <input
+                                type="text"
+                                value={defaultSettings?.firstName || ''}
+                                onChange={(e) => setDefaultSettings({ ...defaultSettings, firstName: e.target.value })}
+                                className="flex-1 p-2 text-black border border-gray-300 rounded"
+                                placeholder='Enter First Name'
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                              <input
+                                type="text"
+                                value={defaultSettings?.lastName || ''}
+                                onChange={(e) => setDefaultSettings({ ...defaultSettings, lastName: e.target.value })}
+                                className="flex-1 p-2 text-black border border-gray-300 rounded"
+                                placeholder='Enter Last Name'
+                              />
+                            </div>
+                          </div>
                         </div>
-
-                        <div>
-
-                        <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                        <input
-                          type="text"
-                          value={defaultSettings?.lastName || ''}
-                          onChange={(e) => setDefaultSettings({ ...defaultSettings, lastName: e.target.value })}
-                          className="flex-1 p-2 text-black border border-gray-300 rounded"
-                           placeholder='Enter Last Name'
-                        />
-                        
+                        <div className="mb-4 w-full px-2">
+                          <label className="block text-sm font-medium text-gray-700">Phone Number with Country Code</label>
+                          <input
+                            type="text"
+                            value={defaultSettings?.phoneNumber || ''}
+                            onChange={(e) => setDefaultSettings({ ...defaultSettings, phoneNumber: e.target.value })}
+                            className="flex-1 p-2 text-black border border-gray-300 rounded"
+                            placeholder='Enter Phone Number'
+                          />
                         </div>
                       </div>
                     </div>
-                    <div className="mb-4 w-full px-2">
-                      <label className="block text-sm font-medium text-gray-700">Phone Number with Country Code</label>
-                      <input
-                        type="text"
-                        value={defaultSettings?.phoneNumber || ''}
-                        onChange={(e) => setDefaultSettings({ ...defaultSettings, phoneNumber: e.target.value })}
-                        className="flex-1 p-2 text-black border border-gray-300 rounded"
-                         placeholder='Enter Phone Number '
-                      />
+                  </>
+                )}
+
+                {clientType === 'Corporate' && (
+                  <>
+                    <div className="mb-8">
+                      <div className="flex flex-wrap -mx-2">
+                        <div className="mb-4 w-full px-2">
+                          <label className="block text-sm font-medium text-gray-700">Company Email</label>
+                          <input
+                            type="text"
+                            value={defaultSettings?.companyEmail || ''}
+                            onChange={(e) => setDefaultSettings({ ...defaultSettings, companyEmail: e.target.value })}
+                            className="flex-1 p-2 text-black border border-gray-300 rounded"
+                            placeholder='Enter Company Email'
+                          />
+                        </div>
+                        <div className="mb-4 w-full px-2">
+                          <label className="block text-sm font-medium text-gray-700">Company Name</label>
+                          <input
+                            type="text"
+                            value={defaultSettings?.companyName || ''}
+                            onChange={(e) => setDefaultSettings({ ...defaultSettings, companyName: e.target.value })}
+                            className="flex-1 p-2 text-black border border-gray-300 rounded mt-2"
+                            placeholder='Add Company Name'
+                          />
+                        </div>
+                        <div className="mb-4 w-full px-2">
+                          <label className="block text-sm font-medium text-gray-700">Company Phone Number with Country Code</label>
+                          <input
+                            type="text"
+                            value={defaultSettings?.companyPhoneNumber || ''}
+                            onChange={(e) => setDefaultSettings({ ...defaultSettings, companyPhoneNumber: e.target.value })}
+                            className="flex-1 p-2 text-black border border-gray-300 rounded"
+                            placeholder='Enter Company Phone Number'
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </>
+                )}
 
                 <h2 className="text-xl font-bold mb-4 text-black">Office & Employee Details</h2>
                 <div className="mb-8">
@@ -373,15 +435,13 @@ const Admin = () => {
                         value={defaultSettings?.organizationName || ''}
                         onChange={(e) => setDefaultSettings({ ...defaultSettings, organizationName: e.target.value })}
                         className="flex-1 p-2 text-black border border-gray-300 rounded mt-2"
-                         placeholder='Add Office Name'
+                        placeholder='Add Office Name'
                       />
                     </div>
                     <div className="mb-4 w-full px-2">
                       <label className="block text-sm font-medium text-gray-700">Services Provided</label>
                       {servicesList.map((service, index) => (
                         <div key={index} className="flex items-center mb-2 mt-2">
-
-                          
                           <input
                             type="text"
                             value={service}
@@ -400,7 +460,7 @@ const Admin = () => {
                             }}
                             className="bg-red-500 text-white px-2 py-1 rounded"
                           >
-                           <MdDeleteOutline />
+                            <MdDeleteOutline />
                           </button>
                         </div>
                       ))}
@@ -416,56 +476,42 @@ const Admin = () => {
                     <div className="mb-4 w-full px-2">
                       <label className="block text-sm font-medium text-gray-700">Employee Name and Designation</label>
                       {individualsList.map((individual, index) => (
-
-
-
                         <div key={index} className="flex space-x-2 mb-2">
-
-<div>
-                        {/* <label className="block text-sm font-medium text-gray-700">Employee Name</label> */}
-
-                        <input
-                            type="text"
-                            value={individual.name}
-                            onChange={(e) => {
-                              const updatedList = [...individualsList];
-                              updatedList[index].name = e.target.value;
-                              setIndividualsList(updatedList);
-                            }}
-                            className="flex-1 p-2 text-black border border-gray-300 rounded mt-2"
-                            placeholder='Employee Name'
-                          />
-                        </div>
-
-                        
-                        <div>
-                        {/* <label className="block text-sm font-medium text-gray-700">Employee Designation</label> */}
-
-                        <input
-                            type="text"
-                            value={individual.designation}
-                            onChange={(e) => {
-                              const updatedList = [...individualsList];
-                              updatedList[index].designation = e.target.value;
-                              setIndividualsList(updatedList);
-                            }}
-                            className="flex-1 p-2 text-black border border-gray-300 rounded mt-2"
-                            placeholder='Employee Designation'
-                          />
-                        </div>
-
-                         
+                          <div>
+                            <input
+                              type="text"
+                              value={individual.name}
+                              onChange={(e) => {
+                                const updatedList = [...individualsList];
+                                updatedList[index].name = e.target.value;
+                                setIndividualsList(updatedList);
+                              }}
+                              className="flex-1 p-2 text-black border border-gray-300 rounded mt-2"
+                              placeholder='Employee Name'
+                            />
+                          </div>
+                          <div>
+                            <input
+                              type="text"
+                              value={individual.designation}
+                              onChange={(e) => {
+                                const updatedList = [...individualsList];
+                                updatedList[index].designation = e.target.value;
+                                setIndividualsList(updatedList);
+                              }}
+                              className="flex-1 p-2 text-black border border-gray-300 rounded mt-2"
+                              placeholder='Employee Designation'
+                            />
+                          </div>
                           <button
                             onClick={() => {
                               const updatedList = individualsList.filter((_, i) => i !== index);
                               setIndividualsList(updatedList);
                             }}
-                            className="bg-red-500 text-white px-2  rounded h-8 relative top-3"
+                            className="bg-red-500 text-white px-2 rounded h-8 relative top-3"
                           >
-                               <MdDeleteOutline />
+                            <MdDeleteOutline />
                           </button>
-
-                          
                         </div>
                       ))}
                       <button
@@ -489,7 +535,7 @@ const Admin = () => {
                         value={question}
                         onChange={(e) => handleUpdateQuestion(index, e.target.value)}
                         className="flex-1 mr-2 p-2 text-black border border-gray-300 rounded"
-                         placeholder='Add a Custom Field'
+                        placeholder='Add a Custom Field'
                       />
                       <button
                         onClick={() => handleDeleteQuestion(index)}
@@ -508,13 +554,10 @@ const Admin = () => {
                 </div>
 
                 <div className="flex justify-end mt-4 space-x-4">
-                  
                   <button
                     onClick={handleSaveUpdates}
                     className="bg-blue-500 text-white px-4 py-2 rounded transform hover:scale-110 transition duration-500 ease-in-out"
-                    
                   >
-                    
                     Save
                   </button>
 
@@ -526,38 +569,34 @@ const Admin = () => {
                   </button>
                   <button
                     onClick={handleOpenForm}
-                    className="bg-green-500 text-white px-4  rounded-md transform hover:scale-110 transition duration-500 ease-in-out"
+                    className="bg-green-500 text-white px-4 rounded-md transform hover:scale-110 transition duration-500 ease-in-out"
                   >
                     Submit Form
                   </button>
-                  
-               
                   <button
-  onClick={() => setViewMode('view')}
-  className="bg-white text-center w-48 rounded-2xl h-14 relative font-sans text-black text-xl font-semibold group"
->
-  <div
-    className="bg-red-500 rounded-xl h-12 w-1/4 flex items-center justify-center absolute left-1 top-[4px] group-hover:w-[184px] z-10 duration-500"
-  >
-    <svg
-      width="25px"
-      height="25px"
-      viewBox="0 0 1024 1024"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        fill="#ffffff"
-        d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"
-      ></path>
-      <path
-        fill="#ffffff"
-        d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"
-      ></path>
-    </svg>
-  </div>
-  
-</button>
-
+                    onClick={() => setViewMode('view')}
+                    className="bg-white text-center w-48 rounded-2xl h-14 relative font-sans text-black text-xl font-semibold group"
+                  >
+                    <div
+                      className="bg-red-500 rounded-xl h-12 w-1/4 flex items-center justify-center absolute left-1 top-[4px] group-hover:w-[184px] z-10 duration-500"
+                    >
+                      <svg
+                        width="25px"
+                        height="25px"
+                        viewBox="0 0 1024 1024"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          fill="#ffffff"
+                          d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"
+                        ></path>
+                        <path
+                          fill="#ffffff"
+                          d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"
+                        ></path>
+                      </svg>
+                    </div>
+                  </button>
                 </div>
               </div>
             </div>
@@ -605,16 +644,17 @@ const Admin = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-end mt-4">
+                <div className="flex justify-end">
                   <button
                     type="submit"
-                    className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                    className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
                   >
-                    Save
+                    Change Password
                   </button>
                   <button
+                    type="button"
                     onClick={() => setShowChangePassword(false)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded"
+                    className="ml-2 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
                   >
                     Cancel
                   </button>
@@ -624,29 +664,31 @@ const Admin = () => {
           </div>
         )}
 
-        {showPreviewModal && (
-          <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
-            <div className="bg-white p-8 rounded shadow-md w-3/4 h-3/4 overflow-y-auto">
-              <h2 className="text-2xl font-bold mb-4 text-black">Form Preview</h2>
-              <Form 
-                formData={formData} 
-                setFormData={setFormData} 
-                errors={errors} 
-                setErrors={setErrors} 
-                individualsList={individualsList}
-                servicesList={servicesList}
-              />
-              <div className="flex justify-end mt-4">
-                <button
-                  onClick={() => setShowPreviewModal(false)}
-                  className="bg-gray-500 text-white px-4 py-2 rounded"
-                >
-                  Close Preview
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+{showPreviewModal && (
+  <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
+    <div className="bg-white p-4 rounded shadow-md w-2/3 h-2/3 overflow-y-auto">
+      <h2 className="text-xl font-bold mb-4 text-black">Preview Form</h2>
+      <Form
+        clientType={clientType} 
+        formData={formData}              // Pass formData from Admin.jsx
+        setFormData={setFormData}        // Pass setFormData function to allow editing
+        errors={errors}                  // Pass validation errors
+        setErrors={setErrors}            // Pass setErrors function
+        individualsList={individualsList} // Pass individualsList as a prop
+        servicesList={servicesList}       // Pass servicesList as a prop
+      />
+      <div className="flex justify-end mt-4">
+        <button
+          onClick={() => setShowPreviewModal(false)}
+          className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
     </div>
   );

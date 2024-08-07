@@ -276,10 +276,11 @@ const FeedbackDetails = () => {
       formatRatings(feedback.overallServices),
       feedback.feedback,
       feedback.recommend,
+      feedback.newsletterSubscribe ? 'Yes' : 'No', // Including the newsletter subscription
     ]));
     doc.autoTable({
       startY: 20,
-      head: [['Email', 'First Name', 'Last Name', 'Phone Number', 'Organization', 'Services', 'Individuals', 'Professionalism Ratings', 'Response Time Ratings', 'Overall Services Ratings', 'Feedback', 'Recommend']],
+      head: [['Email', 'First Name', 'Last Name', 'Phone Number', 'Organization', 'Services', 'Individuals', 'Professionalism Ratings', 'Response Time Ratings', 'Overall Services Ratings', 'Feedback', 'Recommend', 'Newsletter']],
       body: tableData,
     });
     doc.save('selected-feedback-details.pdf');
@@ -300,6 +301,7 @@ const FeedbackDetails = () => {
       OverallServicesRatings: formatRatings(feedback.overallServices),
       Feedback: feedback.feedback,
       Recommend: feedback.recommend,
+      Newsletter: feedback.newsletterSubscribe ? 'Yes' : 'No', // Including the newsletter subscription
     }));
     const worksheet = XLSX.utils.json_to_sheet(feedbackData);
     const workbook = XLSX.utils.book_new();
@@ -645,36 +647,8 @@ const FeedbackDetails = () => {
                   className="mt-1 block w-full p-2 border border-gray-300 bg-white text-black"
                 />
               </div>
-              {/* {selectedFeedback.individuals && selectedFeedback.individuals.map((individual, index) => (
-                <div key={index} className="mb-4">
-                  <h4 className="text-lg font-semibold mb-2">{individual}</h4>
-                  <label className="block text-sm font-medium text-gray-700">Professionalism Rating</label>
-                  <StarRatings
-                    rating={parseInt(selectedFeedback.professionalism[individual]) || 0}
-                    starRatedColor="gold"
-                    numberOfStars={5}
-                    starDimension="24px"
-                    starSpacing="2px"
-                  />
-                  <label className="block text-sm font-medium text-gray-700">Response Time Rating</label>
-                  <StarRatings
-                    rating={parseInt(selectedFeedback.responseTime[individual]) || 0}
-                    starRatedColor="gold"
-                    numberOfStars={5}
-                    starDimension="24px"
-                    starSpacing="2px"
-                  />
-                  <label className="block text-sm font-medium text-gray-700">Overall Services Rating</label>
-                  <StarRatings
-                    rating={parseInt(selectedFeedback.overallServices[individual]) || 0}
-                    starRatedColor="gold"
-                    numberOfStars={5}
-                    starDimension="24px"
-                    starSpacing="2px"
-                  />
-                </div>
-              ))} */}
-              {/* Render custom feedback questions */}
+
+              {/* Render custom feedback questions once */}
               {selectedFeedback.customResponses && Object.keys(selectedFeedback.customResponses).map((question, index) => (
                 <div key={index} className="mb-4">
                   <label className="block text-sm font-medium text-gray-700">{question}</label>
@@ -700,6 +674,15 @@ const FeedbackDetails = () => {
                 <input
                   type="text"
                   value={selectedFeedback.recommend}
+                  readOnly
+                  className="mt-1 block w-full p-2 border border-gray-300 bg-white text-black"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">Newsletter Subscribe</label>
+                <input
+                  type="text"
+                  value={selectedFeedback.newsletterSubscribe ? 'Yes' : 'No'}
                   readOnly
                   className="mt-1 block w-full p-2 border border-gray-300 bg-white text-black"
                 />
